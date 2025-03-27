@@ -1,0 +1,304 @@
+basePath: /api/v1
+definitions:
+  handlers.ErrorResp:
+    properties:
+      message:
+        type: string
+    type: object
+  scripts.AppInfo:
+    properties:
+      app_id:
+        type: string
+      app_key:
+        type: string
+      name:
+        type: string
+    type: object
+  scripts.CreateAppReq:
+    properties:
+      name:
+        type: string
+    type: object
+  scripts.CreateAppResp:
+    properties:
+      app_id:
+        type: string
+      app_key:
+        type: string
+      name:
+        type: string
+    type: object
+  scripts.DeleteAppReq:
+    properties:
+      app_id:
+        type: string
+    type: object
+  scripts.ListAppsReq:
+    type: object
+  scripts.ListAppsResp:
+    properties:
+      apps:
+        items:
+          $ref: '#/definitions/scripts.AppInfo'
+        type: array
+    type: object
+  scripts.LogEntry:
+    properties:
+      _id:
+        type: string
+      app_id:
+        type: string
+      data:
+        additionalProperties: true
+        type: object
+      timestamp:
+        type: string
+    type: object
+  scripts.LoginReq:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  scripts.LoginResp:
+    properties:
+      token:
+        type: string
+    type: object
+  scripts.ReceiveLogsReq:
+    properties:
+      logs:
+        items:
+          $ref: '#/definitions/scripts.LogEntry'
+        type: array
+    type: object
+  scripts.ReceiveLogsResp:
+    properties:
+      message:
+        type: string
+    type: object
+  scripts.RegisterReq:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  scripts.RegisterResp:
+    properties:
+      email:
+        type: string
+      user_id:
+        type: string
+    type: object
+  scripts.SearchLogsReq:
+    properties:
+      format:
+        description: '"json" o "tabla"'
+        type: string
+      from:
+        description: Parámetros de filtrado
+        type: string
+      interval:
+        description: e.g. "1min", "5min", etc.
+        type: string
+      page:
+        type: integer
+      page_size:
+        type: integer
+      search:
+        description: texto para búsqueda
+        type: string
+      to:
+        description: fecha final
+        type: string
+    type: object
+  scripts.SearchLogsResp:
+    properties:
+      ai_summary:
+        type: string
+      logs:
+        items:
+          $ref: '#/definitions/scripts.LogEntry'
+        type: array
+    type: object
+externalDocs:
+  description: OpenAPI
+  url: https://swagger.io/resources/open-api/
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server celler server.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Swagger Example API
+  version: "1.0"
+paths:
+  /api/v1/apps/{appID}/logs:
+    post:
+      consumes:
+      - application/json
+      description: ReceiveLogs
+      parameters:
+      - description: Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/scripts.ReceiveLogsReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/scripts.ReceiveLogsResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResp'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResp'
+      summary: ReceiveLogs
+  /api/v1/backoffice/apps:
+    get:
+      consumes:
+      - application/json
+      description: ListApps
+      parameters:
+      - description: Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/scripts.ListAppsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/scripts.ListAppsResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResp'
+      summary: ListApps
+  /api/v1/backoffice/apps/{appID}:
+    delete:
+      consumes:
+      - application/json
+      description: DeleteApp
+      parameters:
+      - description: Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/scripts.DeleteAppReq'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResp'
+      summary: DeleteApp
+  /api/v1/backoffice/login:
+    post:
+      consumes:
+      - application/json
+      description: Login
+      parameters:
+      - description: Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/scripts.LoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/scripts.LoginResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResp'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResp'
+      summary: Login
+  /api/v1/backoffice/logs:
+    get:
+      consumes:
+      - application/json
+      description: SearchLogs
+      parameters:
+      - description: Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/scripts.SearchLogsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/scripts.SearchLogsResp'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResp'
+      summary: SearchLogs
+  /api/v1/backoffice/register:
+    post:
+      consumes:
+      - application/json
+      description: Register
+      parameters:
+      - description: Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/scripts.RegisterReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/scripts.RegisterResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResp'
+      summary: Register
+securityDefinitions:
+  BasicAuth:
+    type: basic
+swagger: "2.0"
