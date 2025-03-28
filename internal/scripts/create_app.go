@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -13,6 +12,7 @@ import (
 
 type CreateAppReq struct {
 	Name   string `json:"name"`
+	AppKey string `json:"appKey"`
 	UserID string `json:"userId"`
 }
 
@@ -31,7 +31,7 @@ func NewCreateAppScript(db *mongo.Database) *CreateAppScript {
 func (s *CreateAppScript) Exec(ctx context.Context, req CreateAppReq) (*CreateAppResp, error) {
 	app := persistence.App{
 		ID:        primitive.NewObjectID(),
-		AppKey:    uuid.NewString(),
+		AppKey:    req.AppKey,
 		Name:      req.Name,
 		UserID:    req.UserID,
 		CreatedAt: time.Now().UTC(),
