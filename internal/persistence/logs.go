@@ -35,7 +35,7 @@ func SearchLogs(ctx context.Context, db *mongo.Database, appID string, from time
 			},
 		}}},
 		{{Key: "$sort", Value: bson.M{"timestamp": -1}}},
-		{{Key: "$skip", Value: page * limit}},
+		{{Key: "$skip", Value: (page - 1) * limit}},
 		{{Key: "$limit", Value: limit}},
 	}
 	if extraMatch != nil {

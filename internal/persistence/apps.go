@@ -34,7 +34,7 @@ func ListAppsPaginated(ctx context.Context, db *mongo.Database, userID string, p
 	collection := db.Collection(appsCollectionName)
 	cursor, err := collection.Aggregate(ctx, mongo.Pipeline{
 		{{Key: "$match", Value: map[string]string{"userId": userID}}},
-		{{Key: "$skip", Value: page * limit}},
+		{{Key: "$skip", Value: (page - 1) * limit}},
 		{{Key: "$limit", Value: limit}},
 	})
 	if err != nil {
