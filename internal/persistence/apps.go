@@ -42,7 +42,7 @@ func ListAppsPaginated(ctx context.Context, db *mongo.Database, userID string, p
 	}
 	defer cursor.Close(ctx)
 
-	var apps []App
+	apps := make([]App, 0)
 	for cursor.Next(ctx) {
 		var app App
 		if err := cursor.Decode(&app); err != nil {
