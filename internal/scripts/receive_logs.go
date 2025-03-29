@@ -33,18 +33,19 @@ func (s *ReceiveLogsScript) Exec(ctx context.Context, req ReceiveLogsReq) (*Rece
 		return nil, err
 	}
 
-	for _, logEntry := range req.Logs {
-		logDoc := persistence.Log{
+	logs := make([]persistence.Log, len(req.Logs))
+	for i, logEntry := range req.Logs {
+		logs[i] = persistence.Log{
 			ID:        primitive.NewObjectID(),
 			AppID:     app.ID,
 			Timestamp: time.Now().UTC(),
 			Data:      logEntry,
 		}
+	}
 
-		err := persistence.SaveLog(ctx, s.db, logDoc)
-		if err != nil {
-			return nil, err
-		}
+	err = persistence.SaveLogs(ctx, s.db, logs)
+	if err != nil {
+		return nil, err
 	}
 
 	return &ReceiveLogsResp{Message: "Logs recibidos"}, nil

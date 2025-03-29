@@ -18,9 +18,9 @@ type Log struct {
 	Data      map[string]interface{} `bson:"data" json:"data"`
 }
 
-func SaveLog(ctx context.Context, db *mongo.Database, log Log) error {
+func SaveLogs(ctx context.Context, db *mongo.Database, logs []Log) error {
 	collection := db.Collection(logsCollectionName)
-	_, err := collection.InsertOne(ctx, log)
+	_, err := collection.InsertMany(ctx, toAnySlice(logs), nil)
 	return err
 }
 
