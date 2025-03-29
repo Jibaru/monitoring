@@ -83,7 +83,7 @@ func (c Criteria) MapToPipeline() []bson.M {
 				filterStage[f.Field] = bson.M{"$ne": f.Value}
 			case Like:
 				pattern := fmt.Sprintf(".*%v.*", f.Value)
-				filterStage[f.Field] = bson.M{"$regex": pattern}
+				filterStage[f.Field] = bson.M{"$regex": pattern, "$options": "i"}
 			}
 		}
 		pipeline = append(pipeline, bson.M{"$match": filterStage})
