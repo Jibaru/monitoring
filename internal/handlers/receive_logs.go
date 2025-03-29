@@ -19,7 +19,7 @@ import (
 // @Failure      400    {object}    ErrorResp
 // @Failure      401    {object}    ErrorResp
 // @Failure      500    {object}    ErrorResp
-// @Router       /api/v1/apps/{appKey}/logs [post]
+// @Router       /api/v1/apps/logs [post]
 func ReceiveLogs(db *mongo.Database) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req scripts.ReceiveLogsReq
@@ -27,7 +27,7 @@ func ReceiveLogs(db *mongo.Database) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, ErrorResp{Message: err.Error()})
 			return
 		}
-		req.AppKey = c.Param("appKey")
+		req.AppKey = c.GetHeader("x-app-key")
 
 		script := scripts.NewReceiveLogsScript(db)
 		resp, err := script.Exec(c, req)

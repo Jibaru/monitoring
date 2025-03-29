@@ -53,7 +53,7 @@ func New(cfg config.Config) *gin.Engine {
 
 	appsGroup := router.Group("/api/v1/apps")
 	{
-		appsGroup.POST("/:appKey/logs", handlers.ReceiveLogs(db))
+		appsGroup.POST("/logs", handlers.ReceiveLogs(db))
 	}
 
 	router.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
