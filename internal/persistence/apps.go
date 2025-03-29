@@ -48,14 +48,9 @@ func DeleteApp(ctx context.Context, db *mongo.Database, appID string) error {
 	return err
 }
 
-func ListAppsPaginated(ctx context.Context, db *mongo.Database, userID string, page int, limit int) ([]App, error) {
+func ListAppsPaginated(ctx context.Context, db *mongo.Database, criteria Criteria) ([]App, error) {
 	collection := db.Collection(appsCollectionName)
-	cursor, err := collection.Aggregate(ctx, mongo.Pipeline{
-		{{Key: "$match", Value: map[string]string{"userId": userID}}},
-		{{Key: "$sort", Value: bson.M{"createdAt": -1}}},
-		{{Key: "$skip", Value: (page - 1) * limit}},
-		{{Key: "$limit", Value: limit}},
-	})
+	cursor, err := collection.Aggregate(ctx, criteria.MapToPipeline())
 	if err != nil {
 		return nil, err
 	}
