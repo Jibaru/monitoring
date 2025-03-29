@@ -26,13 +26,15 @@ func ListApps(db *mongo.Database) gin.HandlerFunc {
 		page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 		sortOrder := c.DefaultQuery("sortOrder", "desc")
+		searchTerm := c.DefaultQuery("searchTerm", "")
 
 		script := scripts.NewListAppsScript(db)
 		resp, err := script.Exec(c, scripts.ListAppsReq{
-			UserID:    c.GetString("user_id"),
-			Page:      page,
-			Limit:     limit,
-			SortOrder: sortOrder,
+			UserID:     c.GetString("user_id"),
+			Page:       page,
+			Limit:      limit,
+			SortOrder:  sortOrder,
+			SearchTerm: searchTerm,
 		})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, ErrorResp{Message: err.Error()})

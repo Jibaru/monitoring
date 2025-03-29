@@ -48,7 +48,7 @@ func DeleteApp(ctx context.Context, db *mongo.Database, appID string) error {
 	return err
 }
 
-func ListAppsPaginated(ctx context.Context, db *mongo.Database, criteria Criteria) ([]App, error) {
+func ListApps(ctx context.Context, db *mongo.Database, criteria Criteria) ([]App, error) {
 	collection := db.Collection(appsCollectionName)
 	cursor, err := collection.Aggregate(ctx, criteria.MapToPipeline())
 	if err != nil {

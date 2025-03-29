@@ -1,6 +1,10 @@
 package persistence
 
-import "go.mongodb.org/mongo-driver/bson"
+import (
+	"fmt"
+
+	"go.mongodb.org/mongo-driver/bson"
+)
 
 // FilterType represents the type of filter (equals or not equals).
 type FilterType string
@@ -8,6 +12,7 @@ type FilterType string
 const (
 	Equals    FilterType = "eq"
 	NotEquals FilterType = "ne"
+	Like      FilterType = "like"
 )
 
 // Filter represents a filter on a specific field.
@@ -68,20 +73,22 @@ func NewCriteria(filters []Filter, pagination Pagination, sort Sort) Criteria {
 func (c Criteria) MapToPipeline() []bson.M {
 	var pipeline []bson.M
 
-	// Build filters
 	if len(c.Filters) > 0 {
 		filterStage := bson.M{}
 		for _, f := range c.Filters {
-			mongoOp := "$eq"
-			if f.Type == NotEquals {
-				mongoOp = "$ne"
+			switch f.Type {
+			case Equals:
+				filterStage[f.Field] = bson.M{"$eq": f.Value}
+			case NotEquals:
+				filterStage[f.Field] = bson.M{"$ne": f.Value}
+			case Like:
+				pattern := fmt.Sprintf(".*%v.*", f.Value)
+				filterStage[f.Field] = bson.M{"$regex": pattern}
 			}
-			filterStage[f.Field] = bson.M{mongoOp: f.Value}
 		}
 		pipeline = append(pipeline, bson.M{"$match": filterStage})
 	}
 
-	// Apply sorting
 	if c.Sort.Field != "" {
 		order := 1
 		if c.Sort.Order == Desc {
@@ -90,7 +97,6 @@ func (c Criteria) MapToPipeline() []bson.M {
 		pipeline = append(pipeline, bson.M{"$sort": bson.M{c.Sort.Field: order}})
 	}
 
-	// Apply pagination
 	if c.Pagination.Offset > 0 {
 		pipeline = append(pipeline, bson.M{"$skip": c.Pagination.Offset})
 	}
