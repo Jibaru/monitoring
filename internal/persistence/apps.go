@@ -42,6 +42,15 @@ func GetAppByID(ctx context.Context, db *mongo.Database, appID primitive.ObjectI
 	return &app, nil
 }
 
+func GetAppByKey(ctx context.Context, db *mongo.Database, appKey string) (*App, error) {
+	var app App
+	err := db.Collection(appsCollectionName).FindOne(ctx, bson.M{"appKey": appKey}).Decode(&app)
+	if err != nil {
+		return nil, err
+	}
+	return &app, nil
+}
+
 func DeleteApp(ctx context.Context, db *mongo.Database, appID string) error {
 	collection := db.Collection(appsCollectionName)
 	_, err := collection.DeleteOne(ctx, map[string]string{"_id": appID})

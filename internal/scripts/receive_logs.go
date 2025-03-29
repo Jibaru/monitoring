@@ -2,18 +2,16 @@ package scripts
 
 import (
 	"context"
-	"fmt"
-	"monitoring/internal/persistence"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"monitoring/internal/persistence"
 )
 
 type ReceiveLogsReq struct {
-	AppID  string                   `json:"-"`
-	APIKey string                   `json:"-"`
+	AppKey string                   `json:"-"`
 	Logs   []map[string]interface{} `json:"logs"`
 }
 
@@ -30,25 +28,15 @@ func NewReceiveLogsScript(db *mongo.Database) *ReceiveLogsScript {
 }
 
 func (s *ReceiveLogsScript) Exec(ctx context.Context, req ReceiveLogsReq) (*ReceiveLogsResp, error) {
-	appID, err := primitive.ObjectIDFromHex(req.AppID)
+	app, err := persistence.GetAppByKey(ctx, s.db, req.AppKey)
 	if err != nil {
-		return nil, fmt.Errorf("ID de app inválido")
-	}
-
-	var app struct {
-		AppKey string `bson:"app_key"`
-	}
-	if err := s.db.Collection("apps").FindOne(ctx, bson.M{"_id": req.AppID}).Decode(&app); err != nil {
-		return nil, fmt.Errorf("app no encontrada")
-	}
-	if app.AppKey != req.APIKey {
-		return nil, fmt.Errorf("API key inválida")
+		return nil, err
 	}
 
 	for _, logEntry := range req.Logs {
 		logDoc := persistence.Log{
 			ID:        primitive.NewObjectID(),
-			AppID:     appID,
+			AppID:     app.ID,
 			Timestamp: time.Now().UTC(),
 			Data:      logEntry,
 		}
@@ -58,5 +46,6 @@ func (s *ReceiveLogsScript) Exec(ctx context.Context, req ReceiveLogsReq) (*Rece
 			return nil, err
 		}
 	}
+
 	return &ReceiveLogsResp{Message: "Logs recibidos"}, nil
 }
