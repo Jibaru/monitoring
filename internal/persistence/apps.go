@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -22,6 +23,23 @@ func SaveApp(ctx context.Context, db *mongo.Database, app App) error {
 	collection := db.Collection(appsCollectionName)
 	_, err := collection.InsertOne(ctx, app)
 	return err
+}
+
+func UpdateApp(ctx context.Context, db *mongo.Database, app App) error {
+	collection := db.Collection(appsCollectionName)
+	_, err := collection.UpdateOne(ctx, bson.M{"_id": app.ID}, map[string]any{
+		"$set": app,
+	})
+	return err
+}
+
+func GetAppByID(ctx context.Context, db *mongo.Database, appID primitive.ObjectID) (*App, error) {
+	var app App
+	err := db.Collection(appsCollectionName).FindOne(ctx, bson.M{"_id": appID}).Decode(&app)
+	if err != nil {
+		return nil, err
+	}
+	return &app, nil
 }
 
 func DeleteApp(ctx context.Context, db *mongo.Database, appID string) error {

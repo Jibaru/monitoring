@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.mongodb.org/mongo-driver/event"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -18,12 +19,18 @@ import (
 )
 
 func New(cfg config.Config) *gin.Engine {
+	cmdMonitor := &event.CommandMonitor{
+		Started: func(_ context.Context, evt *event.CommandStartedEvent) {
+			log.Print(evt.Command)
+		},
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.MongoURI))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.MongoURI).SetMonitor(cmdMonitor))
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	db := client.Database(cfg.DBName)
 
 	router := gin.Default()
@@ -38,6 +45,7 @@ func New(cfg config.Config) *gin.Engine {
 		{
 			backoffice.GET("/apps", handlers.ListApps(db))
 			backoffice.POST("/apps", handlers.CreateApp(db))
+			backoffice.PATCH("/apps/:appID", handlers.UpdateApp(db))
 			backoffice.DELETE("/apps/:appID", handlers.DeleteApp(db))
 			backoffice.GET("/logs", handlers.SearchLogs(db))
 		}
