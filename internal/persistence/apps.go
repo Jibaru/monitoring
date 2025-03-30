@@ -15,7 +15,7 @@ type App struct {
 	ID        primitive.ObjectID `bson:"_id" json:"id"`
 	Name      string             `bson:"name" json:"name"`
 	AppKey    string             `bson:"appKey" json:"appKey"`
-	UserID    string             `bson:"userId" json:"userId"`
+	UserID    primitive.ObjectID `bson:"userId" json:"userId"`
 	CreatedAt time.Time          `bson:"createdAt" json:"createdAt"`
 }
 
@@ -51,9 +51,9 @@ func GetAppByKey(ctx context.Context, db *mongo.Database, appKey string) (*App, 
 	return &app, nil
 }
 
-func DeleteApp(ctx context.Context, db *mongo.Database, appID string) error {
+func DeleteApp(ctx context.Context, db *mongo.Database, appID primitive.ObjectID) error {
 	collection := db.Collection(appsCollectionName)
-	_, err := collection.DeleteOne(ctx, map[string]string{"_id": appID})
+	_, err := collection.DeleteOne(ctx, map[string]any{"_id": appID})
 	return err
 }
 

@@ -13,6 +13,12 @@ const (
 	Equals    FilterType = "eq"
 	NotEquals FilterType = "ne"
 	Like      FilterType = "like"
+	In        FilterType = "in"
+)
+
+var (
+	EmptyPagination Pagination = Pagination{}
+	EmptySort       Sort       = Sort{}
 )
 
 // Filter represents a filter on a specific field.
@@ -84,6 +90,8 @@ func (c Criteria) MapToPipeline() []bson.M {
 			case Like:
 				pattern := fmt.Sprintf(".*%v.*", f.Value)
 				filterStage[f.Field] = bson.M{"$regex": pattern, "$options": "i"}
+			case In:
+				filterStage[f.Field] = bson.M{"$in": f.Value}
 			}
 		}
 		pipeline = append(pipeline, bson.M{"$match": filterStage})

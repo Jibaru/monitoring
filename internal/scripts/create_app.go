@@ -39,11 +39,16 @@ func (s *CreateAppScript) Exec(ctx context.Context, req CreateAppReq) (*CreateAp
 		return nil, errors.New("app with the provided app key already exists")
 	}
 
+	userID, err := primitive.ObjectIDFromHex(req.UserID)
+	if err != nil {
+		return nil, err
+	}
+
 	app := persistence.App{
 		ID:        primitive.NewObjectID(),
 		AppKey:    req.AppKey,
 		Name:      req.Name,
-		UserID:    req.UserID,
+		UserID:    userID,
 		CreatedAt: time.Now().UTC(),
 	}
 	err = persistence.SaveApp(ctx, s.db, app)

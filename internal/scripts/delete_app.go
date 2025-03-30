@@ -3,6 +3,7 @@ package scripts
 import (
 	"context"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"monitoring/internal/persistence"
@@ -21,7 +22,12 @@ func NewDeleteAppScript(db *mongo.Database) *DeleteAppScript {
 }
 
 func (s *DeleteAppScript) Exec(ctx context.Context, req DeleteAppReq) error {
-	err := persistence.DeleteApp(ctx, s.db, req.AppID)
+	id, err := primitive.ObjectIDFromHex(req.AppID)
+	if err != nil {
+		return err
+	}
+
+	err = persistence.DeleteApp(ctx, s.db, id)
 	if err != nil {
 		return err
 	}

@@ -2,28 +2,24 @@ package scripts
 
 import (
 	"context"
-	"fmt"
-	"time"
 
-	openai "github.com/openai/openai-go"
-	"github.com/openai/openai-go/packages/param"
+	"github.com/openai/openai-go"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"monitoring/internal/persistence"
 )
 
 type SearchLogsReq struct {
-	AppID  string    `json:"appId"`
-	From   time.Time `form:"from"`
-	To     time.Time `form:"to"`
-	Search string    `form:"search"`
-	Page   int       `form:"page"`
-	Limit  int       `form:"limit"`
+	UserID    string `json:"-"`
+	Page      int    `form:"page"`
+	Limit     int    `form:"limit"`
+	SortOrder string `form:"sortOrder"`
 }
 
 type SearchLogsResp struct {
-	Logs []persistence.Log `json:"logs"`
+	Data []persistence.Log `json:"data"`
 }
 
 type SearchLogsScript struct {
@@ -32,37 +28,47 @@ type SearchLogsScript struct {
 }
 
 func NewSearchLogsScript(db *mongo.Database) *SearchLogsScript {
+	// TODO: add pipeline generation using openai client
 	client := openai.NewClient(openai.DefaultClientOptions()...)
 	return &SearchLogsScript{db: db, openaiClient: &client}
 }
 
 func (s *SearchLogsScript) Exec(ctx context.Context, req SearchLogsReq) (*SearchLogsResp, error) {
-	// Prompt that will be used to generate a mongo pipeline to search logs
-	prompt := fmt.Sprintf("create a mongo pipeline in mongo from %s to %s containing \"%s\"", req.From, req.To, req.Search)
-	openaiResp, err := s.openaiClient.Completions.New(ctx, openai.CompletionNewParams{
-		Model: "gpt-4",
-		Prompt: openai.CompletionNewParamsPromptUnion{
-			OfString: param.NewOpt(prompt),
+	userID, err := primitive.ObjectIDFromHex(req.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	apps, err := persistence.ListApps(ctx, s.db, persistence.NewCriteria(
+		[]persistence.Filter{
+			persistence.NewFilter("userId", persistence.Equals, userID),
 		},
-		MaxTokens: param.NewOpt[int64](100),
-	})
+		persistence.EmptyPagination,
+		persistence.EmptySort,
+	))
 	if err != nil {
 		return nil, err
 	}
 
-	pipelineStr := openaiResp.Choices[0].Text
-	pipeline, err := ParseMatch(pipelineStr)
+	appsIDs := make(bson.A, len(apps))
+	for i, app := range apps {
+		appsIDs[i] = app.ID
+	}
+
+	filters := []persistence.Filter{
+		persistence.NewFilter("appId", persistence.In, appsIDs),
+	}
+
+	criteria := persistence.NewCriteria(
+		filters,
+		persistence.NewPagination(req.Limit, (req.Page-1)*req.Limit),
+		persistence.NewSort("createdAt", persistence.SortOrder(req.SortOrder)),
+	)
+
+	logs, err := persistence.ListLogs(ctx, s.db, criteria)
 	if err != nil {
 		return nil, err
 	}
 
-	logs, err := persistence.SearchLogs(ctx, s.db, req.AppID, req.From, req.To, req.Page, req.Limit, pipeline)
-	if err != nil {
-		return nil, err
-	}
-	return &SearchLogsResp{Logs: logs}, nil
-}
-
-func ParseMatch(matchStage string) (bson.M, error) {
-	return nil, nil
+	return &SearchLogsResp{Data: logs}, nil
 }

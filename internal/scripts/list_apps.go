@@ -5,6 +5,7 @@ import (
 	"monitoring/internal/persistence"
 	"strings"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -29,8 +30,13 @@ func NewListAppsScript(db *mongo.Database) *ListAppsScript {
 }
 
 func (s *ListAppsScript) Exec(ctx context.Context, req ListAppsReq) (*ListAppsResp, error) {
+	userID, err := primitive.ObjectIDFromHex(req.UserID)
+	if err != nil {
+		return nil, err
+	}
+
 	filters := []persistence.Filter{
-		persistence.NewFilter("userId", persistence.Equals, req.UserID),
+		persistence.NewFilter("userId", persistence.Equals, userID),
 	}
 
 	if strings.TrimSpace(req.SearchTerm) != "" {

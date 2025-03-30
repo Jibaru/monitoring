@@ -26,6 +26,8 @@ func SearchLogs(db *mongo.Database) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, ErrorResp{Message: err.Error()})
 			return
 		}
+		req.UserID = c.GetString("user_id")
+
 		script := scripts.NewSearchLogsScript(db)
 		resp, err := script.Exec(c, req)
 		if err != nil {

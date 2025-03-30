@@ -18,7 +18,7 @@ import (
 type ReceiveLogsReq struct {
 	AppKey  string   `json:"-"`
 	Logs    []string `json:"logs"`
-	LogType *string  `json:"log_type"`
+	LogType *string  `json:"logType"`
 }
 
 type ReceiveLogsResp struct {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -25,38 +24,21 @@ func SaveLogs(ctx context.Context, db *mongo.Database, logs []Log) error {
 	return err
 }
 
-func SearchLogs(ctx context.Context, db *mongo.Database, appID string, from time.Time, to time.Time, page int, limit int, extraMatch bson.M) ([]Log, error) {
+func ListLogs(ctx context.Context, db *mongo.Database, criteria Criteria) ([]Log, error) {
 	collection := db.Collection(logsCollectionName)
-	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bson.M{
-			"appId": appID,
-			"timestamp": bson.M{
-				"$gte": from,
-				"$lte": to,
-			},
-		}}},
-		{{Key: "$sort", Value: bson.M{"timestamp": -1}}},
-		{{Key: "$skip", Value: (page - 1) * limit}},
-		{{Key: "$limit", Value: limit}},
-	}
-	if extraMatch != nil {
-		pipeline = append(pipeline, bson.D{{Key: "$match", Value: extraMatch}})
-	}
-
-	cursor, err := collection.Aggregate(ctx, pipeline)
+	cursor, err := collection.Aggregate(ctx, criteria.MapToPipeline())
 	if err != nil {
 		return nil, err
 	}
-
 	defer cursor.Close(ctx)
 
-	var logs []Log
+	logs := make([]Log, 0)
 	for cursor.Next(ctx) {
-		var log Log
-		if err := cursor.Decode(&log); err != nil {
+		var aLog Log
+		if err := cursor.Decode(&aLog); err != nil {
 			return nil, err
 		}
-		logs = append(logs, log)
+		logs = append(logs, aLog)
 	}
 
 	return logs, nil
