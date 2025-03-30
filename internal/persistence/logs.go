@@ -16,6 +16,7 @@ type Log struct {
 	AppID     primitive.ObjectID     `bson:"appId" json:"appId"`
 	Timestamp time.Time              `bson:"timestamp" json:"timestamp"`
 	Data      map[string]interface{} `bson:"data" json:"data"`
+	Raw       string                 `bson:"raw" json:"raw"`
 }
 
 func SaveLogs(ctx context.Context, db *mongo.Database, logs []Log) error {
