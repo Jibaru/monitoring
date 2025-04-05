@@ -54,6 +54,7 @@ func (s *ReceiveLogsScript) Exec(ctx context.Context, req ReceiveLogsReq) (*Rece
 			Timestamp: time.Now().UTC(),
 			Data:      data,
 			Raw:       rawLog,
+			Level:     extractLogLevel(rawLog),
 		}
 	}
 
@@ -182,4 +183,14 @@ func nodeToMap(n xmlNode) map[string]any {
 		m["children"] = children
 	}
 	return m
+}
+
+func extractLogLevel(raw string) string {
+	var levelRegex = regexp.MustCompile(`(?i)\b(?:trace|debug|info|warn|error|fatal)\b`)
+
+	lvl := levelRegex.FindString(raw)
+	if lvl == "" {
+		return ""
+	}
+	return strings.ToUpper(lvl)
 }
