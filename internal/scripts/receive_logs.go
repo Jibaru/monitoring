@@ -186,7 +186,7 @@ func nodeToMap(n xmlNode) map[string]any {
 }
 
 func extractLogLevel(raw string) string {
-	var levelRegex = regexp.MustCompile(`(?i)\b(?:trace|debug|info|warn|error|fatal)\b`)
+	var levelRegex = regexp.MustCompile(`(?i)\b(?:trace|debug|info|warn|warning|error|fatal)\b`)
 
 	lvl := levelRegex.FindString(raw)
 	if lvl == "" {
