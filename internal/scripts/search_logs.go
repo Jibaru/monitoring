@@ -2,6 +2,7 @@ package scripts
 
 import (
 	"context"
+	"strings"
 
 	"github.com/openai/openai-go"
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,10 +13,12 @@ import (
 )
 
 type SearchLogsReq struct {
-	UserID    string `json:"-"`
-	Page      int    `form:"page"`
-	Limit     int    `form:"limit"`
-	SortOrder string `form:"sortOrder"`
+	UserID     string `json:"-"`
+	Page       int    `form:"page"`
+	Limit      int    `form:"limit"`
+	SortOrder  string `form:"sortOrder"`
+	SearchTerm string `form:"searchTerm"`
+	LogLevel   string `form:"logLevel"`
 }
 
 type SearchLogsResp struct {
@@ -57,6 +60,14 @@ func (s *SearchLogsScript) Exec(ctx context.Context, req SearchLogsReq) (*Search
 
 	filters := []persistence.Filter{
 		persistence.NewFilter("appId", persistence.In, appsIDs),
+	}
+
+	if strings.TrimSpace(req.SearchTerm) != "" {
+		filters = append(filters, persistence.NewFilter("raw", persistence.Like, req.SearchTerm))
+	}
+
+	if strings.TrimSpace(req.LogLevel) != "" {
+		filters = append(filters, persistence.NewFilter("level", persistence.Equals, req.LogLevel))
 	}
 
 	criteria := persistence.NewCriteria(
