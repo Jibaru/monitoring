@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"monitoring/config"
-	"monitoring/internal/db"
+	"monitoring/db"
 	"monitoring/server"
 
 	_ "monitoring/docs"

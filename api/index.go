@@ -2,7 +2,7 @@ package handler
 
 import (
 	"monitoring/config"
-	"monitoring/internal/db"
+	"monitoring/db"
 	"monitoring/server"
 	"net/http"
 )
