@@ -106,7 +106,7 @@ func (s *SearchLogsScript) Exec(ctx context.Context, req SearchLogsReq) (*Search
 	criteria := persistence.NewCriteria(
 		filters,
 		persistence.NewPagination(req.Limit, (req.Page-1)*req.Limit),
-		persistence.NewSort("createdAt", persistence.SortOrder(req.SortOrder)),
+		persistence.NewSort("timestamp", persistence.SortOrder(req.SortOrder)),
 	)
 
 	logs, err := persistence.ListLogs(ctx, s.db, criteria)
