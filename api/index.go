@@ -2,13 +2,15 @@ package handler
 
 import (
 	"monitoring/config"
+	"monitoring/internal/db"
 	"monitoring/server"
 	"net/http"
 )
 
 var cfg = config.Load()
-var mux = server.New(cfg)
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-	mux.ServeHTTP(w, r)
+	db, client := db.New(cfg)
+	defer client.Disconnect(r.Context())
+	server.New(cfg, db).ServeHTTP(w, r)
 }

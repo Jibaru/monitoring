@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"monitoring/config"
+	"monitoring/internal/db"
 	"monitoring/server"
 
 	_ "monitoring/docs"
@@ -28,6 +30,8 @@ import (
 // @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
 	cfg := config.Load()
-	router := server.New(cfg)
+	db, client := db.New(cfg)
+	defer client.Disconnect(context.Background())
+	router := server.New(cfg, db)
 	router.Run(":" + cfg.APIPort)
 }

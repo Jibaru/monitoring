@@ -1,38 +1,17 @@
 package server
 
 import (
-	"context"
-	"log"
-
-	"time"
-
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"go.mongodb.org/mongo-driver/event"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"monitoring/config"
 	"monitoring/internal/handlers"
 	"monitoring/internal/middlewares"
 )
 
-func New(cfg config.Config) *gin.Engine {
-	cmdMonitor := &event.CommandMonitor{
-		Started: func(_ context.Context, evt *event.CommandStartedEvent) {
-			log.Print(evt.Command)
-		},
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(cfg.MongoURI).SetMonitor(cmdMonitor))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	db := client.Database(cfg.DBName)
-
+func New(cfg config.Config, db *mongo.Database) *gin.Engine {
 	router := gin.Default()
 	router.Use(middlewares.UseCORS())
 
