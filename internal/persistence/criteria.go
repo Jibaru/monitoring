@@ -10,10 +10,12 @@ import (
 type FilterType string
 
 const (
-	Equals    FilterType = "eq"
-	NotEquals FilterType = "ne"
-	Like      FilterType = "like"
-	In        FilterType = "in"
+	Equals             FilterType = "eq"
+	NotEquals          FilterType = "ne"
+	Like               FilterType = "like"
+	In                 FilterType = "in"
+	GreaterThanOrEqual FilterType = "gte"
+	LessThanOrEqual    FilterType = "lte"
 )
 
 var (
@@ -92,6 +94,10 @@ func (c Criteria) MapToPipeline() []bson.M {
 				filterStage[f.Field] = bson.M{"$regex": pattern, "$options": "i"}
 			case In:
 				filterStage[f.Field] = bson.M{"$in": f.Value}
+			case GreaterThanOrEqual:
+				filterStage[f.Field] = bson.M{"$gte": f.Value}
+			case LessThanOrEqual:
+				filterStage[f.Field] = bson.M{"$lte": f.Value}
 			}
 		}
 		pipeline = append(pipeline, bson.M{"$match": filterStage})

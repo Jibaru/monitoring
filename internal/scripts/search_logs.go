@@ -2,7 +2,9 @@ package scripts
 
 import (
 	"context"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/openai/openai-go"
 	"go.mongodb.org/mongo-driver/bson"
@@ -13,12 +15,15 @@ import (
 )
 
 type SearchLogsReq struct {
-	UserID     string `json:"-"`
-	Page       int    `form:"page"`
-	Limit      int    `form:"limit"`
-	SortOrder  string `form:"sortOrder"`
-	SearchTerm string `form:"searchTerm"`
-	LogLevel   string `form:"logLevel"`
+	UserID     string    `json:"-"`
+	Page       int       `form:"page"`
+	Limit      int       `form:"limit"`
+	SortOrder  string    `form:"sortOrder"`
+	SearchTerm string    `form:"searchTerm"`
+	LogLevel   string    `form:"logLevel"`
+	From       time.Time `form:"from"`
+	To         time.Time `form:"to"`
+	AppID      string    `form:"appId"`
 }
 
 type SearchLogsResp struct {
@@ -53,14 +58,7 @@ func (s *SearchLogsScript) Exec(ctx context.Context, req SearchLogsReq) (*Search
 		return nil, err
 	}
 
-	appsIDs := make(bson.A, len(apps))
-	for i, app := range apps {
-		appsIDs[i] = app.ID
-	}
-
-	filters := []persistence.Filter{
-		persistence.NewFilter("appId", persistence.In, appsIDs),
-	}
+	filters := []persistence.Filter{}
 
 	if strings.TrimSpace(req.SearchTerm) != "" {
 		filters = append(filters, persistence.NewFilter("raw", persistence.Like, req.SearchTerm))
@@ -69,6 +67,41 @@ func (s *SearchLogsScript) Exec(ctx context.Context, req SearchLogsReq) (*Search
 	if strings.TrimSpace(req.LogLevel) != "" {
 		filters = append(filters, persistence.NewFilter("level", persistence.Equals, req.LogLevel))
 	}
+
+	if !req.From.IsZero() {
+		filters = append(filters, persistence.NewFilter("timestamp", persistence.GreaterThanOrEqual, req.From.UTC()))
+	}
+
+	if !req.To.IsZero() {
+		filters = append(filters, persistence.NewFilter("timestamp", persistence.LessThanOrEqual, req.To.UTC()))
+	}
+
+	appsIDs := make(bson.A, len(apps))
+	for i, app := range apps {
+		appsIDs[i] = app.ID
+	}
+	if strings.TrimSpace(req.AppID) != "" {
+		appID, err := primitive.ObjectIDFromHex(req.AppID)
+		if err != nil {
+			return nil, err
+		}
+
+		exists := false
+		for _, existingAppID := range appsIDs {
+			if existingAppID == appID {
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			return nil, fmt.Errorf("app with ID %s does not exist for the user", req.AppID)
+		}
+
+		appsIDs = bson.A{appID}
+	}
+
+	filters = append(filters, persistence.NewFilter("appId", persistence.In, appsIDs))
 
 	criteria := persistence.NewCriteria(
 		filters,
