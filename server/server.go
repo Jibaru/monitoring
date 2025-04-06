@@ -48,6 +48,7 @@ func New(cfg config.Config) *gin.Engine {
 			backoffice.PATCH("/apps/:appID", handlers.UpdateApp(db))
 			backoffice.DELETE("/apps/:appID", handlers.DeleteApp(db))
 			backoffice.GET("/logs", handlers.SearchLogs(db))
+			backoffice.GET("/dashboard/overview", handlers.GetDashboardOverview(db))
 		}
 	}
 
