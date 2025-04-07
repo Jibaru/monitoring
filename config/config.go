@@ -9,10 +9,13 @@ import (
 )
 
 type Config struct {
-	MongoURI  string
-	JWTSecret string
-	APIPort   string
-	DBName    string
+	WebBaseURI      string
+	MongoURI        string
+	JWTSecret       string
+	APIPort         string
+	DBName          string
+	MailAppPassword string
+	MailFromEmail   string
 }
 
 func Load() Config {
@@ -38,10 +41,28 @@ func Load() Config {
 		appPort = "8080"
 	}
 
+	mailAppPassword, ok := os.LookupEnv("MAIL_APP_PASSWORD")
+	if !ok {
+		log.Fatal("MAIL_APP_PASSWORD no configurada")
+	}
+
+	mailFromEmail, ok := os.LookupEnv("MAIL_FROM_EMAIL")
+	if !ok {
+		log.Fatal("MAIL_FROM_EMAIL no configurada")
+	}
+
+	webBaseURI, ok := os.LookupEnv("WEB_BASE_URI")
+	if !ok {
+		webBaseURI = "http://localhost:5173"
+	}
+
 	return Config{
-		MongoURI:  mongoURI,
-		JWTSecret: jwtSecret,
-		APIPort:   appPort,
-		DBName:    "monitoringapp",
+		WebBaseURI:      webBaseURI,
+		MongoURI:        mongoURI,
+		JWTSecret:       jwtSecret,
+		APIPort:         appPort,
+		DBName:          "monitoringapp",
+		MailAppPassword: mailAppPassword,
+		MailFromEmail:   mailFromEmail,
 	}
 }

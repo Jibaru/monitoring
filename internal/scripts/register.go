@@ -3,12 +3,15 @@ package scripts
 import (
 	"context"
 	"errors"
-	"monitoring/internal/persistence"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
+
+	"monitoring/internal/mail"
+	"monitoring/internal/persistence"
 )
 
 type RegisterReq struct {
@@ -22,11 +25,17 @@ type RegisterResp struct {
 }
 
 type RegisterScript struct {
-	db *mongo.Database
+	db         *mongo.Database
+	mailSender *mail.MailSender
+	webBaseURI string
 }
 
-func NewRegisterScript(db *mongo.Database) *RegisterScript {
-	return &RegisterScript{db: db}
+func NewRegisterScript(
+	db *mongo.Database,
+	mailSender *mail.MailSender,
+	webBaseURI string,
+) *RegisterScript {
+	return &RegisterScript{db: db, mailSender: mailSender, webBaseURI: webBaseURI}
 }
 
 func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterResp, error) {
@@ -48,6 +57,9 @@ func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterRe
 		Email:        req.Email,
 		Password:     string(hashed),
 		RegisteredAt: time.Now().UTC(),
+		ValidatedAt:  nil,
+		Pin:          s.generatePin(),
+		PinExpiresAt: time.Now().UTC().Add(1 * 24 * time.Hour),
 	}
 
 	err = persistence.SaveUser(ctx, s.db, user)
@@ -55,5 +67,20 @@ func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterRe
 		return nil, err
 	}
 
+	validatePinURL := s.webBaseURI + "/otp?userId=" + user.ID.Hex()
+
+	err = s.mailSender.Send(
+		req.Email,
+		"Validate your account",
+		fmt.Sprintf("Your pin is %v. You have to validate ir here: %s until %s", user.Pin, validatePinURL, user.PinExpiresAt.Format(time.RFC822Z)),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return &RegisterResp{ID: user.ID.Hex(), Email: req.Email}, nil
+}
+
+func (s *RegisterScript) generatePin() string {
+	return "ABC123"
 }

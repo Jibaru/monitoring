@@ -17,7 +17,7 @@ func New(cfg config.Config, db *mongo.Database) *gin.Engine {
 
 	backoffice := router.Group("/api/v1/backoffice")
 	{
-		backoffice.POST("/register", handlers.Register(db))
+		backoffice.POST("/register", handlers.Register(db, cfg))
 		backoffice.POST("/login", handlers.Login(db, cfg.JWTSecret))
 
 		backoffice.Use(middlewares.HasAuthorization(cfg.JWTSecret))
