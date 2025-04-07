@@ -1,10 +1,11 @@
 package handler
 
 import (
+	"net/http"
+
 	"monitoring/config"
 	"monitoring/db"
 	"monitoring/server"
-	"net/http"
 )
 
 var cfg = config.Load()
