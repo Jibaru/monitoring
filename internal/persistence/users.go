@@ -19,6 +19,7 @@ type User struct {
 	Pin          string             `bson:"pin"`
 	PinExpiresAt time.Time          `bson:"pinExpiresAt" json:"pinExpiresAt"`
 	ValidatedAt  *time.Time         `bson:"validatedAt" json:"validatedAt"`
+	IsVisitor    bool               `bson:"isVisitor" json:"isVisitor"`
 }
 
 func SaveUser(ctx context.Context, db *mongo.Database, user User) error {

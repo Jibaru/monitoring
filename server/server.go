@@ -19,6 +19,7 @@ func New(cfg config.Config, db *mongo.Database) *gin.Engine {
 	{
 		backoffice.POST("/register", handlers.Register(db, cfg))
 		backoffice.POST("/login", handlers.Login(db, cfg.JWTSecret))
+		backoffice.POST("/visitor-login", handlers.VisitorLogin(db, cfg.JWTSecret))
 
 		backoffice.Use(middlewares.HasAuthorization(cfg.JWTSecret))
 		{

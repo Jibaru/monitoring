@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"monitoring/internal/persistence"
-	"time"
 
-	"github.com/golang-jwt/jwt"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -19,8 +17,9 @@ type LoginReq struct {
 type LoginResp struct {
 	Token string `json:"token"`
 	User  struct {
-		ID    string `json:"id"`
-		Email string `json:"email"`
+		ID        string `json:"id"`
+		Email     string `json:"email"`
+		IsVisitor bool   `json:"isVisitor"`
 	} `json:"user"`
 }
 
@@ -46,12 +45,7 @@ func (s *LoginScript) Exec(ctx context.Context, req LoginReq) (*LoginResp, error
 		return nil, errors.New("usuario o contraseña incorrectos")
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID.Hex(),
-		"email":   user.Email,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
-	})
-	tokenString, err := token.SignedString(s.jwtSecret)
+	tokenString, err := generateToken(user.ID, user.Email, string(s.jwtSecret))
 	if err != nil {
 		return nil, err
 	}
@@ -59,11 +53,13 @@ func (s *LoginScript) Exec(ctx context.Context, req LoginReq) (*LoginResp, error
 	return &LoginResp{
 		Token: tokenString,
 		User: struct {
-			ID    string `json:"id"`
-			Email string `json:"email"`
+			ID        string `json:"id"`
+			Email     string `json:"email"`
+			IsVisitor bool   `json:"isVisitor"`
 		}{
-			ID:    user.ID.Hex(),
-			Email: user.Email,
+			ID:        user.ID.Hex(),
+			Email:     user.Email,
+			IsVisitor: false,
 		},
 	}, nil
 }
