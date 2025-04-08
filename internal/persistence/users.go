@@ -16,7 +16,7 @@ type User struct {
 	Email        string             `bson:"email" json:"email"`
 	Password     string             `bson:"password" json:"password"`
 	RegisteredAt time.Time          `bson:"registeredAt" json:"registeredAt"`
-	Pin          string             `bson:"pin"`
+	Pin          string             `bson:"pin" json:"pin"`
 	PinExpiresAt time.Time          `bson:"pinExpiresAt" json:"pinExpiresAt"`
 	ValidatedAt  *time.Time         `bson:"validatedAt" json:"validatedAt"`
 	IsVisitor    bool               `bson:"isVisitor" json:"isVisitor"`

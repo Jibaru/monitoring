@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func generateToken(userID primitive.ObjectID, userEmail string, jwtSecret string) (string, error) {
+func generateToken(userID primitive.ObjectID, userEmail string, jwtSecret []byte) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": userID.Hex(),
 		"email":   userEmail,

@@ -49,7 +49,7 @@ func (s *VisitorLoginScript) Exec(ctx context.Context) (*VisitorLoginResp, error
 		return nil, err
 	}
 
-	tokenString, err := generateToken(user.ID, user.Email, string(s.jwtSecret))
+	tokenString, err := generateToken(user.ID, user.Email, s.jwtSecret)
 	if err != nil {
 		return nil, err
 	}
