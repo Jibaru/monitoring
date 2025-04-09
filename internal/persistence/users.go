@@ -59,7 +59,7 @@ func GetUserByID(ctx context.Context, db *mongo.Database, id primitive.ObjectID)
 }
 
 func UpdateUser(ctx context.Context, db *mongo.Database, user User) error {
-	collection := db.Collection(appsCollectionName)
+	collection := db.Collection(usersCollectionName)
 	_, err := collection.UpdateOne(ctx, bson.M{"_id": user.ID}, map[string]any{
 		"$set": user,
 	})
