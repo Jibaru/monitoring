@@ -41,8 +41,12 @@ func (s *LoginScript) Exec(ctx context.Context, req LoginReq) (*LoginResp, error
 		return nil, err
 	}
 
+	if user.ValidatedAt == nil {
+		return nil, errors.New("user should be validated to login")
+	}
+
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		return nil, errors.New("usuario o contraseña incorrectos")
+		return nil, errors.New("email or password are invalid")
 	}
 
 	tokenString, err := generateToken(user.ID, user.Email, s.jwtSecret)
