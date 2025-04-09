@@ -16,8 +16,9 @@ import (
 )
 
 type RegisterReq struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	VisitorID string `json:"visitorId"`
 }
 
 type RegisterResp struct {
@@ -40,6 +41,25 @@ func NewRegisterScript(
 }
 
 func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterResp, error) {
+	id := primitive.NewObjectID()
+	if req.VisitorID != "" {
+		visitorUserID, err := primitive.ObjectIDFromHex(req.VisitorID)
+		if err != nil {
+			return nil, err
+		}
+
+		visitorUser, err := persistence.GetUserByID(ctx, s.db, visitorUserID)
+		if err != nil {
+			return nil, err
+		}
+
+		if !visitorUser.IsVisitor {
+			return nil, errors.New("visitor user is not visitor")
+		}
+
+		id = visitorUserID
+	}
+
 	exists, err := persistence.ExistUserByEmail(ctx, s.db, req.Email)
 	if err != nil {
 		return nil, err
@@ -54,15 +74,15 @@ func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterRe
 		return nil, err
 	}
 	user := persistence.User{
-		ID:           primitive.NewObjectID(),
+		ID:           id,
 		Email:        req.Email,
 		Password:     string(hashed),
 		RegisteredAt: time.Now().UTC(),
 		ValidatedAt:  nil,
 		Pin:          s.generatePin(),
 		PinExpiresAt: time.Now().UTC().Add(1 * 24 * time.Hour),
+		IsVisitor:    false,
 	}
-
 	err = persistence.SaveUser(ctx, s.db, user)
 	if err != nil {
 		return nil, err
