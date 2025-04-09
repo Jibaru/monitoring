@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -82,5 +83,28 @@ func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterRe
 }
 
 func (s *RegisterScript) generatePin() string {
-	return "ABC123"
+	const length = 6
+	letters := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	digits := "0123456789"
+	var pin []byte
+
+	// At least 2 letters
+	for i := 0; i < 2; i++ {
+		pin = append(pin, letters[rand.Intn(len(letters))])
+	}
+	// At least 2 numbers
+	for i := 0; i < 2; i++ {
+		pin = append(pin, digits[rand.Intn(len(digits))])
+	}
+
+	allChars := letters + digits
+	for i := 0; i < length-4; i++ {
+		pin = append(pin, allChars[rand.Intn(len(allChars))])
+	}
+
+	rand.Shuffle(len(pin), func(i, j int) {
+		pin[i], pin[j] = pin[j], pin[i]
+	})
+
+	return string(pin)
 }
