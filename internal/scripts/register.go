@@ -42,6 +42,7 @@ func NewRegisterScript(
 
 func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterResp, error) {
 	id := primitive.NewObjectID()
+	isFromVisitor := false
 	if req.VisitorID != "" {
 		visitorUserID, err := primitive.ObjectIDFromHex(req.VisitorID)
 		if err != nil {
@@ -58,6 +59,7 @@ func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterRe
 		}
 
 		id = visitorUserID
+		isFromVisitor = true
 	}
 
 	exists, err := persistence.ExistUserByEmail(ctx, s.db, req.Email)
@@ -83,9 +85,17 @@ func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterRe
 		PinExpiresAt: time.Now().UTC().Add(1 * 24 * time.Hour),
 		IsVisitor:    false,
 	}
-	err = persistence.SaveUser(ctx, s.db, user)
-	if err != nil {
-		return nil, err
+
+	if isFromVisitor {
+		err = persistence.UpdateUser(ctx, s.db, user)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err = persistence.SaveUser(ctx, s.db, user)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	validatePinURL := s.webBaseURI + "/validate?userId=" + user.ID.Hex()
