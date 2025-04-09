@@ -47,3 +47,12 @@ func GetUserByEmail(ctx context.Context, db *mongo.Database, email string) (*Use
 	}
 	return &user, nil
 }
+
+func GetUserByID(ctx context.Context, db *mongo.Database, id primitive.ObjectID) (*User, error) {
+	var user User
+	err := db.Collection(usersCollectionName).FindOne(ctx, map[string]any{"_id": id}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
