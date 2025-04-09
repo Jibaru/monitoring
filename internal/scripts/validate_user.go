@@ -13,6 +13,7 @@ import (
 
 var (
 	ErrValidateUserScriptValidationExpired = errors.New("validation expired")
+	ErrValidateUserScriptInvalidPin        = errors.New("invalid pin")
 )
 
 type ValidateUserReq struct {
@@ -49,10 +50,14 @@ func (s *ValidateUserScript) Exec(ctx context.Context, req ValidateUserReq) (*Va
 		return nil, ErrValidateUserScriptValidationExpired
 	}
 
+	if user.Pin != req.Pin {
+		return nil, ErrValidateUserScriptInvalidPin
+	}
+
 	validatedAt := time.Now().UTC()
 	user.ValidatedAt = &validatedAt
 
-	err = persistence.SaveUser(ctx, s.db, *user)
+	err = persistence.UpdateUser(ctx, s.db, *user)
 	if err != nil {
 		return nil, err
 	}

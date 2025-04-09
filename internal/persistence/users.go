@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -55,4 +56,12 @@ func GetUserByID(ctx context.Context, db *mongo.Database, id primitive.ObjectID)
 		return nil, err
 	}
 	return &user, nil
+}
+
+func UpdateUser(ctx context.Context, db *mongo.Database, user User) error {
+	collection := db.Collection(appsCollectionName)
+	_, err := collection.UpdateOne(ctx, bson.M{"_id": user.ID}, map[string]any{
+		"$set": user,
+	})
+	return err
 }
