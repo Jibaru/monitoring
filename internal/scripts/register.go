@@ -67,7 +67,7 @@ func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterRe
 		return nil, err
 	}
 
-	validatePinURL := s.webBaseURI + "/otp?userId=" + user.ID.Hex()
+	validatePinURL := s.webBaseURI + "/validate?userId=" + user.ID.Hex()
 
 	err = s.mailSender.Send(
 		req.Email,
