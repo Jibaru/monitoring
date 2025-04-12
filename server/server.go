@@ -1,7 +1,10 @@
 package server
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -15,6 +18,9 @@ import (
 	"monitoring/internal/handlers"
 	"monitoring/internal/middlewares"
 )
+
+//go:embed static
+var staticFiles embed.FS
 
 func New(cfg config.Config, db *mongo.Database) *gin.Engine {
 	router := gin.Default()
@@ -63,7 +69,13 @@ func New(cfg config.Config, db *mongo.Database) *gin.Engine {
 		appsGroup.POST("/logs", handlers.ReceiveLogs(db))
 	}
 
-	router.Static("/api/static", "./internal/static")
+	subFS, err := fs.Sub(staticFiles, "static")
+	if err != nil {
+		// En un entorno real probablemente desees un manejo de errores más robusto
+		panic(err)
+	}
+
+	router.StaticFS("/api/static", http.FS(subFS))
 	router.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return router
