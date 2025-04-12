@@ -19,6 +19,8 @@ type Config struct {
 	MailFromEmail      string
 	GithubClientID     string
 	GithubClientSecret string
+	GoogleClientID     string
+	GoogleClientSecret string
 }
 
 func Load() Config {
@@ -74,6 +76,16 @@ func Load() Config {
 		log.Fatal("GITHUB_CLIENT_SECRET no configurada")
 	}
 
+	googleClientID, ok := os.LookupEnv("GOOGLE_CLIENT_ID")
+	if !ok {
+		log.Fatal("GOOGLE_CLIENT_ID no configurada")
+	}
+
+	googleClientSecret, ok := os.LookupEnv("GOOGLE_CLIENT_SECRET")
+	if !ok {
+		log.Fatal("GOOGLE_CLIENT_SECRET no configurada")
+	}
+
 	return Config{
 		APIBaseURI:         APIBaseURI,
 		WebBaseURI:         webBaseURI,
@@ -85,5 +97,7 @@ func Load() Config {
 		MailFromEmail:      mailFromEmail,
 		GithubClientID:     githubClientID,
 		GithubClientSecret: githubClientSecret,
+		GoogleClientID:     googleClientID,
+		GoogleClientSecret: googleClientSecret,
 	}
 }

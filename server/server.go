@@ -30,8 +30,8 @@ func New(cfg config.Config, db *mongo.Database) *gin.Engine {
 
 	googleOAuthConfig := &oauth2.Config{
 		RedirectURL:  fmt.Sprintf("%s/api/v1/backoffice/auth/google/callback", cfg.APIBaseURI),
-		ClientID:     cfg.GithubClientID,
-		ClientSecret: cfg.GithubClientSecret,
+		ClientID:     cfg.GoogleClientID,
+		ClientSecret: cfg.GoogleClientSecret,
 		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"},
 		Endpoint:     google.Endpoint,
 	}
