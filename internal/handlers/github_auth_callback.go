@@ -92,7 +92,8 @@ func GithubAuthCallback(db *mongo.Database, cfg *oauth2.Config, appCfg config.Co
 	}
 
 	return func(c *gin.Context) {
-		state := c.Query("code")
+		code := c.Query("code")
+		state := c.Query("state")
 
 		existsState, err := persistence.ExistOAuthStateByState(c, db, state)
 		if err != nil {
@@ -101,11 +102,11 @@ func GithubAuthCallback(db *mongo.Database, cfg *oauth2.Config, appCfg config.Co
 		}
 
 		if !existsState {
-			c.JSON(http.StatusBadRequest, ErrorResp{Message: "invalid code/state"})
+			c.JSON(http.StatusBadRequest, ErrorResp{Message: "invalid state"})
 			return
 		}
 
-		token, err := cfg.Exchange(c, state)
+		token, err := cfg.Exchange(c, code)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, ErrorResp{Message: err.Error()})
 			return
