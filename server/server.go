@@ -63,6 +63,7 @@ func New(cfg config.Config, db *mongo.Database) *gin.Engine {
 		appsGroup.POST("/logs", handlers.ReceiveLogs(db))
 	}
 
+	router.Static("/api/static", "./internal/static")
 	router.GET("/api/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return router
