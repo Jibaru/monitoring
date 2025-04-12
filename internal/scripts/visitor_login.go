@@ -12,12 +12,7 @@ import (
 )
 
 type VisitorLoginResp struct {
-	Token string `json:"token"`
-	User  struct {
-		ID        string `json:"id"`
-		Email     string `json:"email"`
-		IsVisitor bool   `json:"isVisitor"`
-	} `json:"user"`
+	LoginResp
 }
 
 type VisitorLoginScript struct {
@@ -37,6 +32,7 @@ func (s *VisitorLoginScript) Exec(ctx context.Context) (*VisitorLoginResp, error
 
 	user := persistence.User{
 		ID:           primitive.NewObjectID(),
+		Username:     generateUsername(),
 		Email:        visitorEmail,
 		Password:     "",
 		RegisteredAt: time.Now().UTC(),
@@ -55,15 +51,6 @@ func (s *VisitorLoginScript) Exec(ctx context.Context) (*VisitorLoginResp, error
 	}
 
 	return &VisitorLoginResp{
-		Token: tokenString,
-		User: struct {
-			ID        string `json:"id"`
-			Email     string `json:"email"`
-			IsVisitor bool   `json:"isVisitor"`
-		}{
-			ID:        user.ID.Hex(),
-			Email:     user.Email,
-			IsVisitor: user.IsVisitor,
-		},
+		LoginResp: *userToLoginResp(tokenString, &user),
 	}, nil
 }

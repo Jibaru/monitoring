@@ -1,6 +1,8 @@
 package scripts
 
 import (
+	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -19,4 +21,20 @@ func generateToken(userID primitive.ObjectID, userEmail string, jwtSecret []byte
 	}
 
 	return tokenString, nil
+}
+
+func generateUsername() string {
+	var adjectives = []string{
+		"Cool", "Mighty", "Silent", "Fierce", "Crazy", "Lucky", "Charming", "Nimble",
+	}
+
+	var nouns = []string{
+		"Panther", "Tiger", "Falcon", "Wizard", "Knight", "Dragon", "Shadow", "Phoenix",
+	}
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	adj := adjectives[r.Intn(len(adjectives))]
+	noun := nouns[r.Intn(len(nouns))]
+	number := r.Intn(100)
+	return fmt.Sprintf("%s%s%d", adj, noun, number)
 }

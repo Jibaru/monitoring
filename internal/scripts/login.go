@@ -18,6 +18,7 @@ type LoginResp struct {
 	Token string `json:"token"`
 	User  struct {
 		ID        string `json:"id"`
+		Username  string `json:"username"`
 		Email     string `json:"email"`
 		IsVisitor bool   `json:"isVisitor"`
 	} `json:"user"`
@@ -54,16 +55,22 @@ func (s *LoginScript) Exec(ctx context.Context, req LoginReq) (*LoginResp, error
 		return nil, err
 	}
 
+	return userToLoginResp(tokenString, user), nil
+}
+
+func userToLoginResp(token string, user *persistence.User) *LoginResp {
 	return &LoginResp{
-		Token: tokenString,
+		Token: token,
 		User: struct {
 			ID        string `json:"id"`
+			Username  string `json:"username"`
 			Email     string `json:"email"`
 			IsVisitor bool   `json:"isVisitor"`
 		}{
 			ID:        user.ID.Hex(),
+			Username:  user.Username,
 			Email:     user.Email,
-			IsVisitor: false,
+			IsVisitor: user.IsVisitor,
 		},
-	}, nil
+	}
 }

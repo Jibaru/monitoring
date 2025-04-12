@@ -77,6 +77,7 @@ func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterRe
 	}
 	user := persistence.User{
 		ID:           id,
+		Username:     generateUsername(),
 		Email:        req.Email,
 		Password:     string(hashed),
 		RegisteredAt: time.Now().UTC(),

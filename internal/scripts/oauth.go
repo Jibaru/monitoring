@@ -43,6 +43,7 @@ func (s *OAuthScript) Exec(ctx context.Context, req OAuthReq) (*OAuthResp, error
 		validatedAt := time.Now().UTC()
 		u := persistence.User{
 			ID:           primitive.NewObjectID(),
+			Username:     req.Username,
 			Email:        req.Email,
 			Password:     "",
 			RegisteredAt: time.Now().UTC(),
@@ -65,17 +66,6 @@ func (s *OAuthScript) Exec(ctx context.Context, req OAuthReq) (*OAuthResp, error
 	}
 
 	return &OAuthResp{
-		LoginResp: LoginResp{
-			Token: tokenString,
-			User: struct {
-				ID        string `json:"id"`
-				Email     string `json:"email"`
-				IsVisitor bool   `json:"isVisitor"`
-			}{
-				ID:        user.ID.Hex(),
-				Email:     user.Email,
-				IsVisitor: false,
-			},
-		},
+		LoginResp: *userToLoginResp(tokenString, user),
 	}, nil
 }

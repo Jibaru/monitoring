@@ -14,6 +14,7 @@ const usersCollectionName = "users"
 
 type User struct {
 	ID           primitive.ObjectID `bson:"_id" json:"id"`
+	Username     string             `bson:"username" json:"username"`
 	Email        string             `bson:"email" json:"email"`
 	Password     string             `bson:"password" json:"password"`
 	RegisteredAt time.Time          `bson:"registeredAt" json:"registeredAt"`
