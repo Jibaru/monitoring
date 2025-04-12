@@ -10,6 +10,10 @@ import (
 
 const oauthStateCollectionName = "oauthState"
 
+var (
+	ErrNoOAuthStatesDeleted = errors.New("no oauth states deleted")
+)
+
 type OAuthState struct {
 	ID    primitive.ObjectID `bson:"_id" json:"id"`
 	State string             `bson:"state" json:"state"`
@@ -30,4 +34,16 @@ func ExistOAuthStateByState(ctx context.Context, db *mongo.Database, state strin
 		return false, err
 	}
 	return true, nil
+}
+
+func DeleteOAuthStateByState(ctx context.Context, db *mongo.Database, state string) error {
+	collection := db.Collection(oauthStateCollectionName)
+	res, err := collection.DeleteOne(ctx, map[string]string{"state": state})
+	if err != nil {
+		return err
+	}
+	if res.DeletedCount == 0 {
+		return ErrNoOAuthStatesDeleted
+	}
+	return nil
 }

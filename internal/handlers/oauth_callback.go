@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -32,13 +33,13 @@ func OAuthCallback(
 		code := c.Query("code")
 		state := c.Query("state")
 
-		existsState, err := persistence.ExistOAuthStateByState(c, db, state)
-		if err != nil {
+		err := persistence.DeleteOAuthStateByState(c, db, state)
+		if err != nil && !errors.Is(err, persistence.ErrNoOAuthStatesDeleted) {
 			c.JSON(http.StatusInternalServerError, ErrorResp{Message: err.Error()})
 			return
 		}
 
-		if !existsState {
+		if err != nil && errors.Is(err, persistence.ErrNoOAuthStatesDeleted) {
 			c.JSON(http.StatusBadRequest, ErrorResp{Message: "invalid state"})
 			return
 		}
