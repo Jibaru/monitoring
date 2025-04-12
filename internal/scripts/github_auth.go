@@ -11,28 +11,28 @@ import (
 	"monitoring/internal/persistence"
 )
 
-type GithubAuthReq struct {
+type OAuthReq struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 }
 
-type GithubAuthResp struct {
+type OAuthResp struct {
 	LoginResp
 }
 
-type GithubAuthScript struct {
+type OAuthScript struct {
 	db        *mongo.Database
 	jwtSecret []byte
 }
 
-func NewGithubAuthScript(
+func NewOAuthScript(
 	db *mongo.Database,
 	jwtSecret []byte,
-) *GithubAuthScript {
-	return &GithubAuthScript{db: db, jwtSecret: jwtSecret}
+) *OAuthScript {
+	return &OAuthScript{db: db, jwtSecret: jwtSecret}
 }
 
-func (s *GithubAuthScript) Exec(ctx context.Context, req GithubAuthReq) (*GithubAuthResp, error) {
+func (s *OAuthScript) Exec(ctx context.Context, req OAuthReq) (*OAuthResp, error) {
 	user, err := persistence.GetUserByEmail(ctx, s.db, req.Email)
 	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, err
@@ -64,7 +64,7 @@ func (s *GithubAuthScript) Exec(ctx context.Context, req GithubAuthReq) (*Github
 		return nil, err
 	}
 
-	return &GithubAuthResp{
+	return &OAuthResp{
 		LoginResp: LoginResp{
 			Token: tokenString,
 			User: struct {

@@ -13,15 +13,15 @@ import (
 	"monitoring/internal/persistence"
 )
 
-// GithubAuth godoc
-// @Summary      GithubAuth
-// @Description  GithubAuth
+// OAuth godoc
+// @Summary      OAuth
+// @Description  OAuth
 // @Accept       json
 // @Produce      json
 // @Success      307
 // @Failure      500    {object}    ErrorResp
-// @Router       /api/v1/backoffice/auth/github [get]
-func GithubAuth(db *mongo.Database, cfg *oauth2.Config) gin.HandlerFunc {
+// @Router       /api/v1/backoffice/auth/{provider} [get]
+func OAuth(db *mongo.Database, cfg *oauth2.Config) gin.HandlerFunc {
 	generateState := func(length int) (string, error) {
 		bytes := make([]byte, length)
 		_, err := rand.Read(bytes)
