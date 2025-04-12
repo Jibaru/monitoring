@@ -34,7 +34,7 @@ func New(cfg config.Config, db *mongo.Database) *gin.Engine {
 		backoffice.POST("/visitor-login", handlers.VisitorLogin(db, cfg.JWTSecret))
 		backoffice.POST("/users/:userID/validate", handlers.ValidateUser(db))
 		backoffice.GET("/auth/github", handlers.GithubAuth(db, githubOAuthConfig))
-		backoffice.GET("/auth/github/callback", handlers.GithubAuthCallback(db, githubOAuthConfig, cfg.JWTSecret))
+		backoffice.GET("/auth/github/callback", handlers.GithubAuthCallback(db, githubOAuthConfig, cfg))
 
 		backoffice.Use(middlewares.HasAuthorization(cfg.JWTSecret))
 		{

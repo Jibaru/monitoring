@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/oauth2"
 
+	"monitoring/config"
 	"monitoring/internal/persistence"
 	"monitoring/internal/scripts"
 )
@@ -22,7 +23,7 @@ import (
 // @Failure      400    {object}    ErrorResp
 // @Failure      500    {object}    ErrorResp
 // @Router       /api/v1/backoffice/auth/github/callback [get]
-func GithubAuthCallback(db *mongo.Database, cfg *oauth2.Config, jwtSecret string) gin.HandlerFunc {
+func GithubAuthCallback(db *mongo.Database, cfg *oauth2.Config, appCfg config.Config) gin.HandlerFunc {
 	getGithubUserData := func(token string) (string, string, error) {
 		req, err := http.NewRequest("GET", "https://api.github.com/user", nil)
 		if err != nil {
@@ -117,7 +118,7 @@ func GithubAuthCallback(db *mongo.Database, cfg *oauth2.Config, jwtSecret string
 		}
 		fmt.Println(username)
 
-		script := scripts.NewGithubAuthScript(db, []byte(jwtSecret))
+		script := scripts.NewGithubAuthScript(db, []byte(appCfg.JWTSecret))
 		resp, err := script.Exec(c, scripts.GithubAuthReq{
 			Username: username,
 			Email:    email,
@@ -127,6 +128,18 @@ func GithubAuthCallback(db *mongo.Database, cfg *oauth2.Config, jwtSecret string
 			return
 		}
 
-		c.JSON(http.StatusOK, resp)
+		isVisitor := "false"
+		if resp.User.IsVisitor {
+			isVisitor = "true"
+		}
+
+		url := fmt.Sprintf("%s/login?token=%s&id=%s&email=%s&isVisitor=%s",
+			appCfg.WebBaseURI,
+			resp.Token,
+			resp.User.ID,
+			resp.User.Email,
+			isVisitor,
+		)
+		c.Redirect(http.StatusTemporaryRedirect, url)
 	}
 }
