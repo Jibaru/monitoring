@@ -23,7 +23,7 @@ func SaveOAuthState(ctx context.Context, db *mongo.Database, oauthState OAuthSta
 
 func ExistOAuthStateByState(ctx context.Context, db *mongo.Database, state string) (bool, error) {
 	var oauthState OAuthState
-	err := db.Collection(usersCollectionName).FindOne(ctx, map[string]string{"sttate": state}).Decode(&oauthState)
+	err := db.Collection(oauthStateCollectionName).FindOne(ctx, map[string]string{"sttate": state}).Decode(&oauthState)
 	if err != nil && errors.Is(err, mongo.ErrNoDocuments) {
 		return false, nil
 	} else if err != nil {
