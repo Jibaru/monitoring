@@ -71,11 +71,12 @@ func OAuthCallback(
 			isVisitor = "true"
 		}
 
-		url := fmt.Sprintf("%s/login?token=%s&id=%s&email=%s&isVisitor=%s",
+		url := fmt.Sprintf("%s/login?token=%s&id=%s&email=%s&username=%s&isVisitor=%s",
 			cfg.WebBaseURI,
 			resp.Token,
 			resp.User.ID,
 			resp.User.Email,
+			resp.User.Username,
 			isVisitor,
 		)
 		c.Redirect(http.StatusTemporaryRedirect, url)
