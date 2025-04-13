@@ -21,6 +21,10 @@ import (
 func GetDashboardOverview(db *mongo.Database) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req scripts.GetDashboardOverviewReq
+		if err := c.ShouldBindQuery(&req); err != nil {
+			c.JSON(http.StatusBadRequest, ErrorResp{Message: err.Error()})
+			return
+		}
 		req.UserID = c.GetString("user_id")
 
 		script := scripts.NewGetDashboardOverviewScript(db)

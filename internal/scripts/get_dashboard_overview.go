@@ -3,6 +3,7 @@ package scripts
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -11,7 +12,9 @@ import (
 )
 
 type GetDashboardOverviewReq struct {
-	UserID string `json:"-"`
+	UserID string    `json:"-"`
+	From   time.Time `form:"from"`
+	To     time.Time `form:"to"`
 }
 
 type KPI struct {
@@ -47,7 +50,19 @@ func (s *GetDashboardOverviewScript) Exec(ctx context.Context, req GetDashboardO
 		return nil, err
 	}
 
-	kpis, err := persistence.GetDashboardOverviewKPIs(ctx, s.db, userID, nil)
+	var dateRange *persistence.Range
+	if !req.From.IsZero() || !req.To.IsZero() {
+		dateRange = &persistence.Range{}
+		if !req.From.IsZero() {
+			dateRange.From = req.From.UTC()
+		}
+
+		if !req.To.IsZero() {
+			dateRange.To = req.To.UTC()
+		}
+	}
+
+	kpis, err := persistence.GetDashboardOverviewKPIs(ctx, s.db, userID, dateRange)
 	if err != nil {
 		return nil, err
 	}
