@@ -9,19 +9,19 @@ import (
 	"monitoring/internal/scripts"
 )
 
-// UpdateUser godoc
-// @Summary      UpdateUser
-// @Description  UpdateUser
+// UpdateUserPassword godoc
+// @Summary      UpdateUserPassword
+// @Description  UpdateUserPassword
 // @Accept       json
 // @Produce      json
-// @Param        body  body    scripts.UpdateUserReq    true    "Request"
-// @Success      201    {object}    scripts.UpdateUserResp
+// @Param        body  body    scripts.UpdateUserPasswordReq    true    "Request"
+// @Success      204
 // @Failure      401    {object}    ErrorResp
 // @Failure      500    {object}    ErrorResp
-// @Router       /api/v1/backoffice/users/me [patch]
-func UpdateUser(db *mongo.Database) gin.HandlerFunc {
+// @Router       /api/v1/backoffice/users/me/password [put]
+func UpdateUserPassword(db *mongo.Database) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req scripts.UpdateUserReq
+		var req scripts.UpdateUserPasswordReq
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, ErrorResp{Message: err.Error()})
 			return
@@ -29,12 +29,12 @@ func UpdateUser(db *mongo.Database) gin.HandlerFunc {
 
 		req.ID = c.Param("user_id")
 
-		script := scripts.NewUpdateUserScript(db)
-		resp, err := script.Exec(c, req)
+		script := scripts.NewUpdateUserPasswordScript(db)
+		err := script.Exec(c, req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, ErrorResp{Message: err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, resp)
+		c.JSON(http.StatusNoContent, nil)
 	}
 }

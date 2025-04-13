@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func generateToken(userID primitive.ObjectID, userEmail string, jwtSecret []byte) (string, error) {
@@ -37,4 +38,21 @@ func generateUsername() string {
 	noun := nouns[r.Intn(len(nouns))]
 	number := r.Intn(100)
 	return fmt.Sprintf("%s%s%d", adj, noun, number)
+}
+
+func isValidPassword(encryptedPassword string, incomingPassword string) bool {
+	if err := bcrypt.CompareHashAndPassword([]byte(encryptedPassword), []byte(incomingPassword)); err != nil {
+		return false
+	}
+
+	return true
+}
+
+func encryptPassword(plainPassword string) (string, error) {
+	hashed, err := bcrypt.GenerateFromPassword([]byte(plainPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+
+	return string(hashed), err
 }

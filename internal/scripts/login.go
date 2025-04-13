@@ -6,7 +6,6 @@ import (
 	"monitoring/internal/persistence"
 
 	"go.mongodb.org/mongo-driver/mongo"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type LoginReq struct {
@@ -46,7 +45,7 @@ func (s *LoginScript) Exec(ctx context.Context, req LoginReq) (*LoginResp, error
 		return nil, errors.New("user should be validated to login")
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+	if !isValidPassword(user.Password, req.Password) {
 		return nil, errors.New("email or password are invalid")
 	}
 

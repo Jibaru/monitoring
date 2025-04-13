@@ -9,7 +9,6 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"golang.org/x/crypto/bcrypt"
 
 	"monitoring/internal/mail"
 	"monitoring/internal/persistence"
@@ -71,7 +70,7 @@ func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterRe
 		return nil, errors.New("el usuario con este email ya existe")
 	}
 
-	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	encryptedPassword, err := encryptPassword(req.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +78,7 @@ func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterRe
 		ID:           id,
 		Username:     generateUsername(),
 		Email:        req.Email,
-		Password:     string(hashed),
+		Password:     encryptedPassword,
 		RegisteredAt: time.Now().UTC(),
 		ValidatedAt:  nil,
 		Pin:          s.generatePin(),
