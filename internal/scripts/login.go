@@ -20,6 +20,7 @@ type LoginResp struct {
 		Username  string `json:"username"`
 		Email     string `json:"email"`
 		IsVisitor bool   `json:"isVisitor"`
+		FromOAuth bool   `json:"fromOAuth"`
 	} `json:"user"`
 }
 
@@ -65,11 +66,13 @@ func userToLoginResp(token string, user *persistence.User) *LoginResp {
 			Username  string `json:"username"`
 			Email     string `json:"email"`
 			IsVisitor bool   `json:"isVisitor"`
+			FromOAuth bool   `json:"fromOAuth"`
 		}{
 			ID:        user.ID.Hex(),
 			Username:  user.Username,
 			Email:     user.Email,
 			IsVisitor: user.IsVisitor,
+			FromOAuth: user.FromOAuth,
 		},
 	}
 }

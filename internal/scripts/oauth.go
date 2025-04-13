@@ -49,7 +49,7 @@ func (s *OAuthScript) Exec(ctx context.Context, req OAuthReq) (*OAuthResp, error
 			RegisteredAt: time.Now().UTC(),
 			ValidatedAt:  &validatedAt,
 			IsVisitor:    false,
-			FromGithub:   true,
+			FromOAuth:    true,
 		}
 
 		err = persistence.SaveUser(ctx, s.db, u)
