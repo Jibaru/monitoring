@@ -62,6 +62,7 @@ func New(cfg config.Config, db *mongo.Database) *gin.Engine {
 			backoffice.GET("/logs", handlers.SearchLogs(db))
 			backoffice.GET("/dashboard/overview", handlers.GetDashboardOverview(db))
 			backoffice.GET("/logs/schema", handlers.GetLogsSchema(db))
+			backoffice.PATCH("/users/me", handlers.UpdateUser(db))
 		}
 	}
 
