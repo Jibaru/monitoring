@@ -27,7 +27,7 @@ func UpdateUserPassword(db *mongo.Database) gin.HandlerFunc {
 			return
 		}
 
-		req.ID = c.Param("user_id")
+		req.ID = c.GetString("user_id")
 
 		script := scripts.NewUpdateUserPasswordScript(db)
 		err := script.Exec(c, req)

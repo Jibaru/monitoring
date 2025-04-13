@@ -27,7 +27,7 @@ func UpdateUser(db *mongo.Database) gin.HandlerFunc {
 			return
 		}
 
-		req.ID = c.Param("user_id")
+		req.ID = c.GetString("user_id")
 
 		script := scripts.NewUpdateUserScript(db)
 		resp, err := script.Exec(c, req)
