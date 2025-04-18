@@ -26,19 +26,19 @@ type Config struct {
 func Load() Config {
 	if err := godotenv.Load(); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			log.Println(".env no encontrado, se utilizarán las variables de entorno por defecto")
+			log.Println(".env not found, using environment variables as default")
 		} else {
-			log.Fatal("Error cargando .env", err)
+			log.Fatal("error loading .env", err)
 		}
 	}
 	mongoURI, ok := os.LookupEnv("MONGODB_URI")
 	if !ok {
-		log.Fatal("MONGODB_URI no configurada")
+		log.Fatal("MONGODB_URI not configured")
 	}
 
 	jwtSecret, ok := os.LookupEnv("JWT_SECRET")
 	if !ok {
-		log.Fatal("JWT_SECRET no configurada")
+		log.Fatal("JWT_SECRET not configured")
 	}
 
 	appPort, ok := os.LookupEnv("PORT")
@@ -48,12 +48,12 @@ func Load() Config {
 
 	mailAppPassword, ok := os.LookupEnv("MAIL_APP_PASSWORD")
 	if !ok {
-		log.Fatal("MAIL_APP_PASSWORD no configurada")
+		log.Fatal("MAIL_APP_PASSWORD not configured")
 	}
 
 	mailFromEmail, ok := os.LookupEnv("MAIL_FROM_EMAIL")
 	if !ok {
-		log.Fatal("MAIL_FROM_EMAIL no configurada")
+		log.Fatal("MAIL_FROM_EMAIL not configured")
 	}
 
 	APIBaseURI, ok := os.LookupEnv("API_BASE_URI")
@@ -68,22 +68,22 @@ func Load() Config {
 
 	githubClientID, ok := os.LookupEnv("GITHUB_CLIENT_ID")
 	if !ok {
-		log.Fatal("GITHUB_CLIENT_ID no configurada")
+		log.Fatal("GITHUB_CLIENT_ID not configured")
 	}
 
 	githubClientSecret, ok := os.LookupEnv("GITHUB_CLIENT_SECRET")
 	if !ok {
-		log.Fatal("GITHUB_CLIENT_SECRET no configurada")
+		log.Fatal("GITHUB_CLIENT_SECRET not configured")
 	}
 
 	googleClientID, ok := os.LookupEnv("GOOGLE_CLIENT_ID")
 	if !ok {
-		log.Fatal("GOOGLE_CLIENT_ID no configurada")
+		log.Fatal("GOOGLE_CLIENT_ID not configured")
 	}
 
 	googleClientSecret, ok := os.LookupEnv("GOOGLE_CLIENT_SECRET")
 	if !ok {
-		log.Fatal("GOOGLE_CLIENT_SECRET no configurada")
+		log.Fatal("GOOGLE_CLIENT_SECRET not configured")
 	}
 
 	return Config{

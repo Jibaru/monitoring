@@ -63,7 +63,7 @@ func (s *ReceiveLogsScript) Exec(ctx context.Context, req ReceiveLogsReq) (*Rece
 		return nil, err
 	}
 
-	return &ReceiveLogsResp{Message: "Logs recibidos"}, nil
+	return &ReceiveLogsResp{Message: "Logs received"}, nil
 }
 
 func (s *ReceiveLogsScript) parse(rawLog string, logType string) map[string]any {

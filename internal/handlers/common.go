@@ -31,7 +31,7 @@ func GithubInfoExtractor(token string) (string, string, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return "", "", fmt.Errorf("error getting user info, estado: %s", resp.Status)
+		return "", "", fmt.Errorf("error getting user info, status: %s", resp.Status)
 	}
 
 	type GithubUser struct {

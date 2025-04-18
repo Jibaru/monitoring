@@ -67,7 +67,7 @@ func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterRe
 	}
 
 	if exists {
-		return nil, errors.New("el usuario con este email ya existe")
+		return nil, errors.New("user with this email already exists")
 	}
 
 	encryptedPassword, err := encryptPassword(req.Password)

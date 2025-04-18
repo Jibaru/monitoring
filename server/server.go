@@ -74,7 +74,6 @@ func New(cfg config.Config, db *mongo.Database) *gin.Engine {
 
 	subFS, err := fs.Sub(staticFiles, "static")
 	if err != nil {
-		// En un entorno real probablemente desees un manejo de errores más robusto
 		panic(err)
 	}
 
