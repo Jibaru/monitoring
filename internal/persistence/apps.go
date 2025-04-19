@@ -58,7 +58,7 @@ func (r *appRepo) SaveApp(ctx context.Context, app domain.App) error {
 
 func (r *appRepo) UpdateApp(ctx context.Context, app domain.App) error {
 	collection := r.db.Collection(r.collection)
-	_, err := collection.UpdateOne(ctx, bson.M{"_id": app.ID}, map[string]any{
+	_, err := collection.UpdateOne(ctx, bson.M{"_id": app.ID()}, map[string]any{
 		"$set": appFromDomain(app),
 	})
 	return err
