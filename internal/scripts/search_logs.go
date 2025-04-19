@@ -80,7 +80,7 @@ func (s *SearchLogsScript) Exec(ctx context.Context, req SearchLogsReq) (*Search
 
 	appsIDs := make(bson.A, len(apps))
 	for i, app := range apps {
-		appsIDs[i] = app.ID
+		appsIDs[i] = app.ID()
 	}
 	if strings.TrimSpace(req.AppID) != "" {
 		appID, err := primitive.ObjectIDFromHex(req.AppID)
