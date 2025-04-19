@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"monitoring/internal/persistence"
 	"monitoring/internal/scripts"
 )
 
@@ -28,7 +29,7 @@ func ListApps(db *mongo.Database) gin.HandlerFunc {
 		sortOrder := c.DefaultQuery("sortOrder", "desc")
 		searchTerm := c.DefaultQuery("searchTerm", "")
 
-		script := scripts.NewListAppsScript(db)
+		script := scripts.NewListAppsScript(persistence.NewAppRepo(db))
 		resp, err := script.Exec(c, scripts.ListAppsReq{
 			UserID:     c.GetString("user_id"),
 			Page:       page,

@@ -253,7 +253,7 @@ func GetLogsSchema(ctx context.Context, db *mongo.Database, userID primitive.Obj
 	pipeline := mongo.Pipeline{
 		{
 			{Key: "$lookup", Value: bson.M{
-				"from":         appsCollectionName,
+				"from":         "apps",
 				"localField":   "appId",
 				"foreignField": "_id",
 				"as":           "app",

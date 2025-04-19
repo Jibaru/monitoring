@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"monitoring/internal/persistence"
 	"monitoring/internal/scripts"
 )
 
@@ -22,7 +23,7 @@ func DeleteApp(db *mongo.Database) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		appID := c.Param("appID")
 		req := scripts.DeleteAppReq{AppID: appID}
-		script := scripts.NewDeleteAppScript(db)
+		script := scripts.NewDeleteAppScript(persistence.NewAppRepo(db))
 		err := script.Exec(c, req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, ErrorResp{Message: err.Error()})

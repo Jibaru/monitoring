@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"monitoring/internal/domain"
 	"monitoring/internal/persistence"
 )
 
@@ -33,26 +34,27 @@ type SearchLogsResp struct {
 type SearchLogsScript struct {
 	db           *mongo.Database
 	openaiClient *openai.Client
+	appRepo      domain.AppRepo
 }
 
-func NewSearchLogsScript(db *mongo.Database) *SearchLogsScript {
+func NewSearchLogsScript(db *mongo.Database, appRepo domain.AppRepo) *SearchLogsScript {
 	// TODO: add pipeline generation using openai client
 	client := openai.NewClient(openai.DefaultClientOptions()...)
-	return &SearchLogsScript{db: db, openaiClient: &client}
+	return &SearchLogsScript{db: db, openaiClient: &client, appRepo: appRepo}
 }
 
 func (s *SearchLogsScript) Exec(ctx context.Context, req SearchLogsReq) (*SearchLogsResp, error) {
-	userID, err := primitive.ObjectIDFromHex(req.UserID)
+	userID, err := domain.NewID(req.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	apps, err := persistence.ListApps(ctx, s.db, persistence.NewCriteria(
-		[]persistence.Filter{
-			persistence.NewFilter("userId", persistence.Equals, userID),
+	apps, err := s.appRepo.ListApps(ctx, domain.NewCriteria(
+		[]domain.Filter{
+			domain.NewFilter("userId", domain.Equals, userID),
 		},
-		persistence.EmptyPagination,
-		persistence.EmptySort,
+		domain.EmptyPagination,
+		domain.EmptySort,
 	))
 	if err != nil {
 		return nil, err

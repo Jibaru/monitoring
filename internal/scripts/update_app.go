@@ -3,10 +3,7 @@ package scripts
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-
-	"monitoring/internal/persistence"
+	"monitoring/internal/domain"
 )
 
 type UpdateAppReq struct {
@@ -16,32 +13,39 @@ type UpdateAppReq struct {
 }
 
 type UpdateAppResp struct {
-	persistence.App
+	domain.App
 }
 
 type UpdateAppScript struct {
-	db *mongo.Database
+	appRepo domain.AppRepo
 }
 
-func NewUpdateAppScript(db *mongo.Database) *UpdateAppScript {
-	return &UpdateAppScript{db: db}
+func NewUpdateAppScript(appRepo domain.AppRepo) *UpdateAppScript {
+	return &UpdateAppScript{appRepo: appRepo}
 }
 
 func (s *UpdateAppScript) Exec(ctx context.Context, req UpdateAppReq) (*UpdateAppResp, error) {
-	id, err := primitive.ObjectIDFromHex(req.ID)
+	id, err := domain.NewID(req.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	app, err := persistence.GetAppByID(ctx, s.db, id)
+	app, err := s.appRepo.GetAppByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	app.Name = req.Name
-	app.AppKey = req.AppKey
+	err = app.ChangeName(req.Name)
+	if err != nil {
+		return nil, err
+	}
 
-	err = persistence.UpdateApp(ctx, s.db, *app)
+	err = app.ChangeAppKey(req.AppKey)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.appRepo.UpdateApp(ctx, *app)
 	if err != nil {
 		return nil, err
 	}

@@ -3,12 +3,10 @@ package scripts
 import (
 	"context"
 	"errors"
-	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"monitoring/internal/persistence"
+	"monitoring/internal/domain"
 )
 
 type CreateAppReq struct {
@@ -18,19 +16,19 @@ type CreateAppReq struct {
 }
 
 type CreateAppResp struct {
-	persistence.App
+	domain.App
 }
 
 type CreateAppScript struct {
-	db *mongo.Database
+	appRepo domain.AppRepo
 }
 
-func NewCreateAppScript(db *mongo.Database) *CreateAppScript {
-	return &CreateAppScript{db: db}
+func NewCreateAppScript(appRepo domain.AppRepo) *CreateAppScript {
+	return &CreateAppScript{appRepo: appRepo}
 }
 
 func (s *CreateAppScript) Exec(ctx context.Context, req CreateAppReq) (*CreateAppResp, error) {
-	existing, err := persistence.GetAppByKey(ctx, s.db, req.AppKey)
+	existing, err := s.appRepo.GetAppByKey(ctx, req.AppKey)
 	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, err
 	}
@@ -39,24 +37,28 @@ func (s *CreateAppScript) Exec(ctx context.Context, req CreateAppReq) (*CreateAp
 		return nil, errors.New("app with the provided app key already exists")
 	}
 
-	userID, err := primitive.ObjectIDFromHex(req.UserID)
+	userID, err := domain.NewID(req.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	app := persistence.App{
-		ID:        primitive.NewObjectID(),
-		AppKey:    req.AppKey,
-		Name:      req.Name,
-		UserID:    userID,
-		CreatedAt: time.Now().UTC(),
+	app, err := domain.NewApp(
+		domain.NewAutoID(),
+		req.Name,
+		req.AppKey,
+		userID,
+		Now().UTC(),
+	)
+	if err != nil {
+		return nil, err
 	}
-	err = persistence.SaveApp(ctx, s.db, app)
+
+	err = s.appRepo.SaveApp(ctx, *app)
 	if err != nil {
 		return nil, err
 	}
 
 	return &CreateAppResp{
-		App: app,
+		App: *app,
 	}, nil
 }

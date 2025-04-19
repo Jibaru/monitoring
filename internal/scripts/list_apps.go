@@ -2,11 +2,8 @@ package scripts
 
 import (
 	"context"
-	"monitoring/internal/persistence"
+	"monitoring/internal/domain"
 	"strings"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ListAppsReq struct {
@@ -18,38 +15,38 @@ type ListAppsReq struct {
 }
 
 type ListAppsResp struct {
-	Apps []persistence.App `json:"apps"`
+	Apps []domain.App `json:"apps"`
 }
 
 type ListAppsScript struct {
-	db *mongo.Database
+	appRepo domain.AppRepo
 }
 
-func NewListAppsScript(db *mongo.Database) *ListAppsScript {
-	return &ListAppsScript{db: db}
+func NewListAppsScript(appRepo domain.AppRepo) *ListAppsScript {
+	return &ListAppsScript{appRepo: appRepo}
 }
 
 func (s *ListAppsScript) Exec(ctx context.Context, req ListAppsReq) (*ListAppsResp, error) {
-	userID, err := primitive.ObjectIDFromHex(req.UserID)
+	userID, err := domain.NewID(req.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	filters := []persistence.Filter{
-		persistence.NewFilter("userId", persistence.Equals, userID),
+	filters := []domain.Filter{
+		domain.NewFilter("userId", domain.Equals, userID),
 	}
 
 	if strings.TrimSpace(req.SearchTerm) != "" {
-		filters = append(filters, persistence.NewFilter("name", persistence.Like, req.SearchTerm))
+		filters = append(filters, domain.NewFilter("name", domain.Like, req.SearchTerm))
 	}
 
-	criteria := persistence.NewCriteria(
+	criteria := domain.NewCriteria(
 		filters,
-		persistence.NewPagination(req.Limit, (req.Page-1)*req.Limit),
-		persistence.NewSort("createdAt", persistence.SortOrder(req.SortOrder)),
+		domain.NewPagination(req.Limit, (req.Page-1)*req.Limit),
+		domain.NewSort("createdAt", domain.SortOrder(req.SortOrder)),
 	)
 
-	apps, err := persistence.ListApps(ctx, s.db, criteria)
+	apps, err := s.appRepo.ListApps(ctx, criteria)
 	if err != nil {
 		return nil, err
 	}

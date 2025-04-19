@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"monitoring/internal/domain"
 	"monitoring/internal/persistence"
 )
 
@@ -26,15 +27,16 @@ type ReceiveLogsResp struct {
 }
 
 type ReceiveLogsScript struct {
-	db *mongo.Database
+	db      *mongo.Database
+	appRepo domain.AppRepo
 }
 
-func NewReceiveLogsScript(db *mongo.Database) *ReceiveLogsScript {
-	return &ReceiveLogsScript{db: db}
+func NewReceiveLogsScript(db *mongo.Database, appRepo domain.AppRepo) *ReceiveLogsScript {
+	return &ReceiveLogsScript{db: db, appRepo: appRepo}
 }
 
 func (s *ReceiveLogsScript) Exec(ctx context.Context, req ReceiveLogsReq) (*ReceiveLogsResp, error) {
-	app, err := persistence.GetAppByKey(ctx, s.db, req.AppKey)
+	app, err := s.appRepo.GetAppByKey(ctx, req.AppKey)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +52,7 @@ func (s *ReceiveLogsScript) Exec(ctx context.Context, req ReceiveLogsReq) (*Rece
 
 		logs[i] = persistence.Log{
 			ID:        primitive.NewObjectID(),
-			AppID:     app.ID,
+			AppID:     app.ID(),
 			Timestamp: time.Now().UTC(),
 			Data:      data,
 			Raw:       rawLog,
