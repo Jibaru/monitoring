@@ -52,7 +52,7 @@ func NewAppRepo(db *mongo.Database) *appRepo {
 
 func (r *appRepo) SaveApp(ctx context.Context, app domain.App) error {
 	collection := r.db.Collection(r.collection)
-	_, err := collection.InsertOne(ctx, app)
+	_, err := collection.InsertOne(ctx, appFromDomain(app))
 	return err
 }
 
