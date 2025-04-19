@@ -13,16 +13,17 @@ import (
 const usersCollectionName = "users"
 
 type User struct {
-	ID           primitive.ObjectID `bson:"_id" json:"id"`
-	Username     string             `bson:"username" json:"username"`
-	Email        string             `bson:"email" json:"email"`
-	Password     string             `bson:"password" json:"password"`
-	RegisteredAt time.Time          `bson:"registeredAt" json:"registeredAt"`
-	Pin          string             `bson:"pin" json:"pin"`
-	PinExpiresAt time.Time          `bson:"pinExpiresAt" json:"pinExpiresAt"`
-	ValidatedAt  *time.Time         `bson:"validatedAt" json:"validatedAt"`
-	IsVisitor    bool               `bson:"isVisitor" json:"isVisitor"`
-	FromOAuth    bool               `bson:"fromOAuth" json:"fromOAuth"`
+	ID           primitive.ObjectID  `bson:"_id" json:"id"`
+	Username     string              `bson:"username" json:"username"`
+	Email        string              `bson:"email" json:"email"`
+	Password     string              `bson:"password" json:"password"`
+	RegisteredAt time.Time           `bson:"registeredAt" json:"registeredAt"`
+	Pin          string              `bson:"pin" json:"pin"`
+	PinExpiresAt time.Time           `bson:"pinExpiresAt" json:"pinExpiresAt"`
+	ValidatedAt  *time.Time          `bson:"validatedAt" json:"validatedAt"`
+	IsVisitor    bool                `bson:"isVisitor" json:"isVisitor"`
+	FromOAuth    bool                `bson:"fromOAuth" json:"fromOAuth"`
+	RootUserID   *primitive.ObjectID `bson:"rootUserId,omitempty" json:"rootUserId"`
 }
 
 func SaveUser(ctx context.Context, db *mongo.Database, user User) error {

@@ -38,6 +38,7 @@ func (s *VisitorLoginScript) Exec(ctx context.Context) (*VisitorLoginResp, error
 		RegisteredAt: time.Now().UTC(),
 		ValidatedAt:  nil,
 		IsVisitor:    true,
+		RootUserID:   nil,
 	}
 
 	err := persistence.SaveUser(ctx, s.db, user)

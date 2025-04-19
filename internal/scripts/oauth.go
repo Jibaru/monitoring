@@ -39,7 +39,7 @@ func (s *OAuthScript) Exec(ctx context.Context, req OAuthReq) (*OAuthResp, error
 	}
 
 	if err != nil && errors.Is(err, mongo.ErrNoDocuments) {
-		// Register
+		// Register as root
 		validatedAt := time.Now().UTC()
 		u := persistence.User{
 			ID:           primitive.NewObjectID(),
@@ -50,6 +50,7 @@ func (s *OAuthScript) Exec(ctx context.Context, req OAuthReq) (*OAuthResp, error
 			ValidatedAt:  &validatedAt,
 			IsVisitor:    false,
 			FromOAuth:    true,
+			RootUserID:   nil,
 		}
 
 		err = persistence.SaveUser(ctx, s.db, u)
