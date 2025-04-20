@@ -3,12 +3,13 @@ package persistence
 import (
 	"context"
 	"fmt"
-	"monitoring/internal/domain"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"monitoring/internal/domain"
 )
 
 type logRepo struct {
@@ -17,12 +18,12 @@ type logRepo struct {
 }
 
 type LogDoc struct {
-	ID        primitive.ObjectID     `bson:"_id" json:"id"`
-	AppID     primitive.ObjectID     `bson:"appId" json:"appId"`
-	Timestamp time.Time              `bson:"timestamp" json:"timestamp"`
-	Data      map[string]interface{} `bson:"data" json:"data"`
-	Raw       string                 `bson:"raw" json:"raw"`
-	Level     string                 `bson:"level" json:"level"`
+	ID        primitive.ObjectID `bson:"_id"`
+	AppID     primitive.ObjectID `bson:"appId"`
+	Timestamp time.Time          `bson:"timestamp"`
+	Data      map[string]any     `bson:"data"`
+	Raw       string             `bson:"raw"`
+	Level     string             `bson:"level"`
 }
 
 func logToDomain(log *LogDoc) (*domain.Log, error) {
