@@ -7,12 +7,8 @@ import (
 	"time"
 
 	"github.com/openai/openai-go"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"monitoring/internal/domain"
-	"monitoring/internal/persistence"
 )
 
 type SearchLogsReq struct {
@@ -28,19 +24,19 @@ type SearchLogsReq struct {
 }
 
 type SearchLogsResp struct {
-	Data []persistence.Log `json:"data"`
+	Data []domain.Log `json:"data"`
 }
 
 type SearchLogsScript struct {
-	db           *mongo.Database
 	openaiClient *openai.Client
 	appRepo      domain.AppRepo
+	logRepo      domain.LogRepo
 }
 
-func NewSearchLogsScript(db *mongo.Database, appRepo domain.AppRepo) *SearchLogsScript {
+func NewSearchLogsScript(appRepo domain.AppRepo, logRepo domain.LogRepo) *SearchLogsScript {
 	// TODO: add pipeline generation using openai client
 	client := openai.NewClient(openai.DefaultClientOptions()...)
-	return &SearchLogsScript{db: db, openaiClient: &client, appRepo: appRepo}
+	return &SearchLogsScript{openaiClient: &client, appRepo: appRepo, logRepo: logRepo}
 }
 
 func (s *SearchLogsScript) Exec(ctx context.Context, req SearchLogsReq) (*SearchLogsResp, error) {
@@ -60,30 +56,30 @@ func (s *SearchLogsScript) Exec(ctx context.Context, req SearchLogsReq) (*Search
 		return nil, err
 	}
 
-	filters := []persistence.Filter{}
+	filters := []domain.Filter{}
 
 	if strings.TrimSpace(req.SearchTerm) != "" {
-		filters = append(filters, persistence.NewFilter("raw", persistence.Like, req.SearchTerm))
+		filters = append(filters, domain.NewFilter("raw", domain.Like, req.SearchTerm))
 	}
 
 	if strings.TrimSpace(req.LogLevel) != "" {
-		filters = append(filters, persistence.NewFilter("level", persistence.Equals, req.LogLevel))
+		filters = append(filters, domain.NewFilter("level", domain.Equals, req.LogLevel))
 	}
 
 	if !req.From.IsZero() {
-		filters = append(filters, persistence.NewFilter("timestamp", persistence.GreaterThanOrEqual, req.From.UTC()))
+		filters = append(filters, domain.NewFilter("timestamp", domain.GreaterThanOrEqual, req.From.UTC()))
 	}
 
 	if !req.To.IsZero() {
-		filters = append(filters, persistence.NewFilter("timestamp", persistence.LessThanOrEqual, req.To.UTC()))
+		filters = append(filters, domain.NewFilter("timestamp", domain.LessThanOrEqual, req.To.UTC()))
 	}
 
-	appsIDs := make(bson.A, len(apps))
+	appsIDs := make([]any, len(apps))
 	for i, app := range apps {
 		appsIDs[i] = app.ID()
 	}
 	if strings.TrimSpace(req.AppID) != "" {
-		appID, err := primitive.ObjectIDFromHex(req.AppID)
+		appID, err := domain.NewID(req.AppID)
 		if err != nil {
 			return nil, err
 		}
@@ -100,18 +96,18 @@ func (s *SearchLogsScript) Exec(ctx context.Context, req SearchLogsReq) (*Search
 			return nil, fmt.Errorf("app with ID %s does not exist for the user", req.AppID)
 		}
 
-		appsIDs = bson.A{appID}
+		appsIDs = []any{appID}
 	}
 
-	filters = append(filters, persistence.NewFilter("appId", persistence.In, appsIDs))
+	filters = append(filters, domain.NewFilter("appId", domain.In, appsIDs))
 
-	criteria := persistence.NewCriteria(
+	criteria := domain.NewCriteria(
 		filters,
-		persistence.NewPagination(req.Limit, (req.Page-1)*req.Limit),
-		persistence.NewSort("timestamp", persistence.SortOrder(req.SortOrder)),
+		domain.NewPagination(req.Limit, (req.Page-1)*req.Limit),
+		domain.NewSort("timestamp", domain.SortOrder(req.SortOrder)),
 	)
 
-	logs, err := persistence.ListLogs(ctx, s.db, criteria)
+	logs, err := s.logRepo.ListLogs(ctx, criteria)
 	if err != nil {
 		return nil, err
 	}

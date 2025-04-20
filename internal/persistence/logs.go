@@ -3,6 +3,7 @@ package persistence
 import (
 	"context"
 	"fmt"
+	"monitoring/internal/domain"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,9 +11,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const logsCollectionName = "logs"
+type logRepo struct {
+	db         *mongo.Database
+	collection string
+}
 
-type Log struct {
+type LogDoc struct {
 	ID        primitive.ObjectID     `bson:"_id" json:"id"`
 	AppID     primitive.ObjectID     `bson:"appId" json:"appId"`
 	Timestamp time.Time              `bson:"timestamp" json:"timestamp"`
@@ -21,27 +25,66 @@ type Log struct {
 	Level     string                 `bson:"level" json:"level"`
 }
 
-func SaveLogs(ctx context.Context, db *mongo.Database, logs []Log) error {
-	collection := db.Collection(logsCollectionName)
-	_, err := collection.InsertMany(ctx, toAnySlice(logs), nil)
-	return err
+func logToDomain(log *LogDoc) (*domain.Log, error) {
+	return domain.NewLog(
+		log.ID,
+		log.AppID,
+		log.Timestamp,
+		log.Data,
+		log.Raw,
+		log.Level,
+	)
 }
 
-func ListLogs(ctx context.Context, db *mongo.Database, criteria Criteria) ([]Log, error) {
-	collection := db.Collection(logsCollectionName)
-	cursor, err := collection.Aggregate(ctx, criteria.MapToPipeline())
+func logFromDomain(log domain.Log) LogDoc {
+	return LogDoc{
+		ID:        log.ID(),
+		AppID:     log.AppID(),
+		Timestamp: log.Timestamp(),
+		Data:      log.Data(),
+		Raw:       log.Raw(),
+		Level:     log.Level(),
+	}
+}
+
+func logsFromDomain(logs []domain.Log) []LogDoc {
+	docs := make([]LogDoc, len(logs))
+	for i, log := range logs {
+		docs[i] = logFromDomain(log)
+	}
+	return docs
+}
+
+func NewLogRepo(db *mongo.Database) *logRepo {
+	return &logRepo{db: db, collection: "logs"}
+}
+
+func (r *logRepo) SaveLogs(ctx context.Context, logs []domain.Log) error {
+	collection := r.db.Collection(r.collection)
+	_, err := collection.InsertMany(ctx, toAnySlice(logsFromDomain(logs)), nil)
+	return err
+}
+func (r *logRepo) ListLogs(ctx context.Context, criteria domain.Criteria) ([]domain.Log, error) {
+	collection := r.db.Collection(r.collection)
+	cursor, err := collection.Aggregate(ctx, criteriaToPipeline(criteria))
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
-	logs := make([]Log, 0)
+	logs := make([]domain.Log, 0)
 	for cursor.Next(ctx) {
-		var aLog Log
+		var aLog LogDoc
 		if err := cursor.Decode(&aLog); err != nil {
 			return nil, err
 		}
-		logs = append(logs, aLog)
+
+		l, err := logToDomain(&aLog)
+		if err != nil {
+			return nil, err
+		}
+
+		logs = append(logs, *l)
 	}
 
 	return logs, nil
@@ -248,7 +291,7 @@ type LogSchemaResult struct {
 }
 
 func GetLogsSchema(ctx context.Context, db *mongo.Database, userID primitive.ObjectID, appIDs []primitive.ObjectID, optionalRange *Range) (LogSchemaResult, error) {
-	logsColl := db.Collection(logsCollectionName)
+	logsColl := db.Collection("logs")
 
 	pipeline := mongo.Pipeline{
 		{

@@ -30,7 +30,7 @@ func ReceiveLogs(db *mongo.Database) gin.HandlerFunc {
 		}
 		req.AppKey = c.GetHeader("x-app-key")
 
-		script := scripts.NewReceiveLogsScript(db, persistence.NewAppRepo(db))
+		script := scripts.NewReceiveLogsScript(persistence.NewLogRepo(db), persistence.NewAppRepo(db))
 		resp, err := script.Exec(c, req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, ErrorResp{Message: err.Error()})

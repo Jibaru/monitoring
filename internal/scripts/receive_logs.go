@@ -9,11 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-
 	"monitoring/internal/domain"
-	"monitoring/internal/persistence"
 )
 
 type ReceiveLogsReq struct {
@@ -27,12 +23,12 @@ type ReceiveLogsResp struct {
 }
 
 type ReceiveLogsScript struct {
-	db      *mongo.Database
+	logRepo domain.LogRepo
 	appRepo domain.AppRepo
 }
 
-func NewReceiveLogsScript(db *mongo.Database, appRepo domain.AppRepo) *ReceiveLogsScript {
-	return &ReceiveLogsScript{db: db, appRepo: appRepo}
+func NewReceiveLogsScript(logRepo domain.LogRepo, appRepo domain.AppRepo) *ReceiveLogsScript {
+	return &ReceiveLogsScript{logRepo: logRepo, appRepo: appRepo}
 }
 
 func (s *ReceiveLogsScript) Exec(ctx context.Context, req ReceiveLogsReq) (*ReceiveLogsResp, error) {
@@ -46,21 +42,25 @@ func (s *ReceiveLogsScript) Exec(ctx context.Context, req ReceiveLogsReq) (*Rece
 		logType = *req.LogType
 	}
 
-	logs := make([]persistence.Log, len(req.Logs))
+	logs := make([]domain.Log, len(req.Logs))
 	for i, rawLog := range req.Logs {
 		data := s.parse(rawLog, logType)
-
-		logs[i] = persistence.Log{
-			ID:        primitive.NewObjectID(),
-			AppID:     app.ID(),
-			Timestamp: time.Now().UTC(),
-			Data:      data,
-			Raw:       rawLog,
-			Level:     extractLogLevel(rawLog),
+		log, err := domain.NewLog(
+			domain.NewAutoID(),
+			app.ID(),
+			Now().UTC(),
+			data,
+			rawLog,
+			extractLogLevel(rawLog),
+		)
+		if err != nil {
+			return nil, err
 		}
+
+		logs[i] = *log
 	}
 
-	err = persistence.SaveLogs(ctx, s.db, logs)
+	err = s.logRepo.SaveLogs(ctx, logs)
 	if err != nil {
 		return nil, err
 	}

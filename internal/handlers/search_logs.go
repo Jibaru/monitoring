@@ -29,7 +29,7 @@ func SearchLogs(db *mongo.Database) gin.HandlerFunc {
 		}
 		req.UserID = c.GetString("user_id")
 
-		script := scripts.NewSearchLogsScript(db, persistence.NewAppRepo(db))
+		script := scripts.NewSearchLogsScript(persistence.NewAppRepo(db), persistence.NewLogRepo(db))
 		resp, err := script.Exec(c, req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, ErrorResp{Message: err.Error()})
