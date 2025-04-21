@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"monitoring/internal/persistence"
 	"monitoring/internal/scripts"
 )
 
@@ -23,7 +24,7 @@ func GetLogsSchema(db *mongo.Database) gin.HandlerFunc {
 		var req scripts.GetLogsSchemaReq
 		req.UserID = c.GetString("user_id")
 
-		script := scripts.NewGetLogsSchemaScript(db)
+		script := scripts.NewGetLogsSchemaScript(persistence.NewLogSchemaRepo(db))
 		resp, err := script.Exec(c, req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, ErrorResp{Message: err.Error()})

@@ -3,10 +3,7 @@ package scripts
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-
-	"monitoring/internal/persistence"
+	"monitoring/internal/domain"
 )
 
 type GetLogsSchemaReq struct {
@@ -14,30 +11,30 @@ type GetLogsSchemaReq struct {
 }
 
 type GetLogsSchemaResp struct {
-	persistence.LogSchemaResult
+	domain.LogSchema
 }
 
 type GetLogsSchemaScript struct {
-	db *mongo.Database
+	logSchemaRepo domain.LogSchemaRepo
 }
 
-func NewGetLogsSchemaScript(db *mongo.Database) *GetLogsSchemaScript {
-	return &GetLogsSchemaScript{db: db}
+func NewGetLogsSchemaScript(logSchemaRepo domain.LogSchemaRepo) *GetLogsSchemaScript {
+	return &GetLogsSchemaScript{logSchemaRepo: logSchemaRepo}
 }
 
 func (s *GetLogsSchemaScript) Exec(ctx context.Context, req GetLogsSchemaReq) (*GetLogsSchemaResp, error) {
-	userID, err := primitive.ObjectIDFromHex(req.UserID)
+	userID, err := domain.NewID(req.UserID)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO: add appIDs filter and [from, to] timestamp filter
-	result, err := persistence.GetLogsSchema(ctx, s.db, userID, nil, nil)
+	result, err := s.logSchemaRepo.Get(ctx, userID, nil, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	return &GetLogsSchemaResp{
-		LogSchemaResult: result,
+		LogSchema: result,
 	}, nil
 }
