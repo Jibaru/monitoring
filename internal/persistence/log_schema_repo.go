@@ -9,6 +9,8 @@ import (
 	"monitoring/internal/domain"
 )
 
+var _ domain.LogSchemaRepo = &logSchemaRepo{}
+
 type logSchemaRepo struct {
 	db *mongo.Database
 }

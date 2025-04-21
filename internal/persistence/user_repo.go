@@ -3,13 +3,16 @@ package persistence
 import (
 	"context"
 	"errors"
-	"monitoring/internal/domain"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"monitoring/internal/domain"
 )
+
+var _ domain.UserRepo = &userRepo{}
 
 type UserDoc struct {
 	ID           primitive.ObjectID  `bson:"_id" json:"id"`
