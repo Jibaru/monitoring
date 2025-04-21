@@ -106,7 +106,7 @@ func (r *userRepo) GetUserByID(ctx context.Context, id domain.ID) (*domain.User,
 
 func (r *userRepo) UpdateUser(ctx context.Context, user domain.User) error {
 	collection := r.db.Collection(r.collection)
-	_, err := collection.UpdateOne(ctx, bson.M{"_id": user.ID}, map[string]any{
+	_, err := collection.UpdateOne(ctx, bson.M{"_id": user.ID()}, map[string]any{
 		"$set": userFromDomain(user),
 	})
 	return err
