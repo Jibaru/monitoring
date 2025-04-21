@@ -10,13 +10,6 @@ type ErrorResp struct {
 	Message string `json:"message"`
 }
 
-type OAuthInfo struct {
-	Username string
-	Email    string
-}
-
-type OAuthInfoExtractor func(token string) (string, string, error)
-
 func GithubInfoExtractor(token string) (string, string, error) {
 	req, err := http.NewRequest("GET", "https://api.github.com/user", nil)
 	if err != nil {

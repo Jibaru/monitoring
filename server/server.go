@@ -48,8 +48,8 @@ func New(cfg config.Config, db *mongo.Database) *gin.Engine {
 		backoffice.POST("/login", handlers.Login(db, cfg.JWTSecret))
 		backoffice.POST("/visitor-login", handlers.VisitorLogin(db, cfg.JWTSecret))
 		backoffice.POST("/users/:userID/validate", handlers.ValidateUser(db))
-		backoffice.GET("/auth/github", handlers.OAuth(db, githubOAuthConfig))
-		backoffice.GET("/auth/google", handlers.OAuth(db, googleOAuthConfig))
+		backoffice.GET("/auth/github", handlers.StartOAuth(db, githubOAuthConfig))
+		backoffice.GET("/auth/google", handlers.StartOAuth(db, googleOAuthConfig))
 		backoffice.GET("/auth/github/callback", handlers.OAuthCallback(db, handlers.GithubInfoExtractor, githubOAuthConfig, cfg))
 		backoffice.GET("/auth/google/callback", handlers.OAuthCallback(db, handlers.GoogleInfoExtractor, googleOAuthConfig, cfg))
 

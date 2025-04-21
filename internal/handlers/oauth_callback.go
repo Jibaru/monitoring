@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +8,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"monitoring/config"
+	"monitoring/internal/domain/services"
 	"monitoring/internal/persistence"
 	"monitoring/internal/scripts"
 )
@@ -19,67 +18,31 @@ import (
 // @Description  OAuthCallback
 // @Accept       json
 // @Produce      json
-// @Success      200    {object}    scripts.GithubAuthResp
+// @Success      307
 // @Failure      400    {object}    ErrorResp
-// @Failure      500    {object}    ErrorResp
 // @Router       /api/v1/backoffice/auth/{provider}/callback [get]
 func OAuthCallback(
 	db *mongo.Database,
-	infoExtractor OAuthInfoExtractor,
+	infoExtractor services.OAuthInfoExtractor,
 	oauthCfg *oauth2.Config,
 	cfg config.Config,
 ) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		code := c.Query("code")
-		state := c.Query("state")
-
-		err := persistence.DeleteOAuthStateByState(c, db, state)
-		if err != nil && !errors.Is(err, persistence.ErrNoOAuthStatesDeleted) {
-			c.JSON(http.StatusInternalServerError, ErrorResp{Message: err.Error()})
-			return
-		}
-
-		if err != nil && errors.Is(err, persistence.ErrNoOAuthStatesDeleted) {
-			c.JSON(http.StatusBadRequest, ErrorResp{Message: "invalid state"})
-			return
-		}
-
-		token, err := oauthCfg.Exchange(c, code)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, ErrorResp{Message: err.Error()})
-			return
-		}
-
-		username, email, err := infoExtractor(token.AccessToken)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, ErrorResp{Message: err.Error()})
-			return
-		}
-		fmt.Println(username)
-
-		script := scripts.NewOAuthScript(persistence.NewUserRepo(db), []byte(cfg.JWTSecret))
-		resp, err := script.Exec(c, scripts.OAuthReq{
-			Username: username,
-			Email:    email,
+		resp, err := scripts.NewFinishOAuthScript(
+			persistence.NewUserRepo(db),
+			persistence.NewOAuthStateRepo(db),
+			oauthCfg,
+			infoExtractor,
+			cfg,
+		).Exec(c, scripts.FinishOAuthReq{
+			Code:  c.Query("code"),
+			State: c.Query("state"),
 		})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, ErrorResp{Message: err.Error()})
+			c.JSON(http.StatusBadRequest, ErrorResp{Message: err.Error()})
 			return
 		}
 
-		isVisitor := "false"
-		if resp.User.IsVisitor {
-			isVisitor = "true"
-		}
-
-		url := fmt.Sprintf("%s/login?token=%s&id=%s&email=%s&username=%s&isVisitor=%s",
-			cfg.WebBaseURI,
-			resp.Token,
-			resp.User.ID,
-			resp.User.Email,
-			resp.User.Username,
-			isVisitor,
-		)
-		c.Redirect(http.StatusTemporaryRedirect, url)
+		c.Redirect(http.StatusTemporaryRedirect, resp.URL)
 	}
 }
