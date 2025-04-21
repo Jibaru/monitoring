@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"monitoring/internal/persistence"
 	"monitoring/internal/scripts"
 )
 
@@ -27,7 +28,7 @@ func GetDashboardOverview(db *mongo.Database) gin.HandlerFunc {
 		}
 		req.UserID = c.GetString("user_id")
 
-		script := scripts.NewGetDashboardOverviewScript(db)
+		script := scripts.NewGetDashboardOverviewScript(persistence.NewDashboardRepo(db))
 		resp, err := script.Exec(c, req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, ErrorResp{Message: err.Error()})

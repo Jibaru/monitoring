@@ -5,10 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-
-	"monitoring/internal/persistence"
+	"monitoring/internal/domain"
 )
 
 type GetDashboardOverviewReq struct {
@@ -37,22 +34,22 @@ type GetDashboardOverviewResp struct {
 }
 
 type GetDashboardOverviewScript struct {
-	db *mongo.Database
+	dashboardRepo domain.DashboardRepo
 }
 
-func NewGetDashboardOverviewScript(db *mongo.Database) *GetDashboardOverviewScript {
-	return &GetDashboardOverviewScript{db: db}
+func NewGetDashboardOverviewScript(dashboardRepo domain.DashboardRepo) *GetDashboardOverviewScript {
+	return &GetDashboardOverviewScript{dashboardRepo: dashboardRepo}
 }
 
 func (s *GetDashboardOverviewScript) Exec(ctx context.Context, req GetDashboardOverviewReq) (*GetDashboardOverviewResp, error) {
-	userID, err := primitive.ObjectIDFromHex(req.UserID)
+	userID, err := domain.NewID(req.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	var dateRange *persistence.Range
+	var dateRange *domain.Range
 	if !req.From.IsZero() || !req.To.IsZero() {
-		dateRange = &persistence.Range{}
+		dateRange = &domain.Range{}
 		if !req.From.IsZero() {
 			dateRange.From = req.From.UTC()
 		}
@@ -62,7 +59,7 @@ func (s *GetDashboardOverviewScript) Exec(ctx context.Context, req GetDashboardO
 		}
 	}
 
-	kpis, err := persistence.GetDashboardOverviewKPIs(ctx, s.db, userID, dateRange)
+	kpis, err := s.dashboardRepo.OverviewKPIs(ctx, userID, dateRange)
 	if err != nil {
 		return nil, err
 	}
