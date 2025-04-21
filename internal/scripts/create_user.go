@@ -7,11 +7,8 @@ import (
 	"math/rand"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-
+	"monitoring/internal/domain"
 	"monitoring/internal/mail"
-	"monitoring/internal/persistence"
 )
 
 type CreateUserReq struct {
@@ -27,34 +24,34 @@ type CreateUserResp struct {
 }
 
 type CreateUserScript struct {
-	db         *mongo.Database
+	userRepo   domain.UserRepo
 	mailSender *mail.MailSender
 	webBaseURI string
 }
 
 func NewCreateUserScript(
-	db *mongo.Database,
+	userRepo domain.UserRepo,
 	mailSender *mail.MailSender,
 	webBaseURI string,
 ) *CreateUserScript {
-	return &CreateUserScript{db: db, mailSender: mailSender, webBaseURI: webBaseURI}
+	return &CreateUserScript{userRepo: userRepo, mailSender: mailSender, webBaseURI: webBaseURI}
 }
 
 func (s *CreateUserScript) Exec(ctx context.Context, req CreateUserReq) (*CreateUserResp, error) {
-	id := primitive.NewObjectID()
+	id := domain.NewAutoID()
 	isFromVisitor := false
 	if req.VisitorID != "" {
-		visitorUserID, err := primitive.ObjectIDFromHex(req.VisitorID)
+		visitorUserID, err := domain.NewID(req.VisitorID)
 		if err != nil {
 			return nil, err
 		}
 
-		visitorUser, err := persistence.GetUserByID(ctx, s.db, visitorUserID)
+		visitorUser, err := s.userRepo.GetUserByID(ctx, visitorUserID)
 		if err != nil {
 			return nil, err
 		}
 
-		if !visitorUser.IsVisitor {
+		if !visitorUser.IsVisitor() {
 			return nil, errors.New("visitor user is not visitor")
 		}
 
@@ -62,29 +59,29 @@ func (s *CreateUserScript) Exec(ctx context.Context, req CreateUserReq) (*Create
 		isFromVisitor = true
 	}
 
-	var rootUserID *primitive.ObjectID
+	var rootUserID *domain.ID
 	if req.RootID != "" {
-		rootID, err := primitive.ObjectIDFromHex(req.RootID)
+		rootID, err := domain.NewID(req.RootID)
 		if err != nil {
 			return nil, err
 		}
-		rootUser, err := persistence.GetUserByID(ctx, s.db, rootID)
+		rootUser, err := s.userRepo.GetUserByID(ctx, rootID)
 		if err != nil {
 			return nil, err
 		}
 
-		if rootUser.RootUserID != nil {
+		if !rootUser.IsRoot() {
 			return nil, errors.New("root user is not root")
 		}
 
-		if rootUser.IsVisitor {
+		if rootUser.IsVisitor() {
 			return nil, errors.New("root user is visitor")
 		}
 
 		rootUserID = &rootID
 	}
 
-	exists, err := persistence.ExistUserByEmail(ctx, s.db, req.Email)
+	exists, err := s.userRepo.ExistUserByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -97,43 +94,48 @@ func (s *CreateUserScript) Exec(ctx context.Context, req CreateUserReq) (*Create
 	if err != nil {
 		return nil, err
 	}
-	user := persistence.User{
-		ID:           id,
-		Username:     generateUsername(),
-		Email:        req.Email,
-		Password:     encryptedPassword,
-		RegisteredAt: time.Now().UTC(),
-		ValidatedAt:  nil,
-		Pin:          s.generatePin(),
-		PinExpiresAt: time.Now().UTC().Add(1 * 24 * time.Hour),
-		IsVisitor:    false,
-		RootUserID:   rootUserID,
-	}
 
-	if isFromVisitor {
-		err = persistence.UpdateUser(ctx, s.db, user)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		err = persistence.SaveUser(ctx, s.db, user)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	validatePinURL := s.webBaseURI + "/validate?userId=" + user.ID.Hex()
-
-	err = s.mailSender.Send(
+	user, err := domain.NewUser(
+		id,
+		generateUsername(),
 		req.Email,
-		"Validate your account",
-		fmt.Sprintf("Your pin is %v. You have to validate ir here: %s until %s", user.Pin, validatePinURL, user.PinExpiresAt.Format(time.RFC822Z)),
+		encryptedPassword,
+		Now().UTC(),
+		s.generatePin(),
+		Now().UTC().Add(1*24*time.Hour),
+		nil,
+		false,
+		false,
+		rootUserID,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &CreateUserResp{ID: user.ID.Hex(), Email: req.Email}, nil
+	if isFromVisitor {
+		err = s.userRepo.UpdateUser(ctx, *user)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err = s.userRepo.SaveUser(ctx, *user)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	validatePinURL := s.webBaseURI + "/validate?userId=" + user.ID().Hex()
+
+	err = s.mailSender.Send(
+		req.Email,
+		"Validate your account",
+		fmt.Sprintf("Your pin is %v. You have to validate ir here: %s until %s", user.Pin(), validatePinURL, user.PinExpiresAt().Format(time.RFC822Z)),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CreateUserResp{ID: user.ID().Hex(), Email: req.Email}, nil
 }
 
 func (s *CreateUserScript) generatePin() string {

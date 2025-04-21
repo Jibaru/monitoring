@@ -8,6 +8,7 @@ import (
 
 	"monitoring/config"
 	"monitoring/internal/mail"
+	"monitoring/internal/persistence"
 	"monitoring/internal/scripts"
 )
 
@@ -28,7 +29,7 @@ func Register(db *mongo.Database, cfg config.Config) gin.HandlerFunc {
 			return
 		}
 		mailSender := mail.NewMailSender(cfg.MailFromEmail, cfg.MailAppPassword)
-		resp, err := scripts.NewRegisterScript(db, mailSender, cfg.WebBaseURI).Exec(c, req)
+		resp, err := scripts.NewRegisterScript(persistence.NewUserRepo(db), mailSender, cfg.WebBaseURI).Exec(c, req)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, ErrorResp{Message: err.Error()})
 			return

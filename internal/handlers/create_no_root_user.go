@@ -8,6 +8,7 @@ import (
 
 	"monitoring/config"
 	"monitoring/internal/mail"
+	"monitoring/internal/persistence"
 	"monitoring/internal/scripts"
 )
 
@@ -34,7 +35,7 @@ func CreateNoRootUser(db *mongo.Database, cfg config.Config) gin.HandlerFunc {
 		}
 
 		mailSender := mail.NewMailSender(cfg.MailFromEmail, cfg.MailAppPassword)
-		resp, err := scripts.NewCreateUserScript(db, mailSender, cfg.WebBaseURI).Exec(c, req)
+		resp, err := scripts.NewCreateUserScript(persistence.NewUserRepo(db), mailSender, cfg.WebBaseURI).Exec(c, req)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, ErrorResp{Message: err.Error()})
 			return

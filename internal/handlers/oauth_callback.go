@@ -57,7 +57,7 @@ func OAuthCallback(
 		}
 		fmt.Println(username)
 
-		script := scripts.NewOAuthScript(db, []byte(cfg.JWTSecret))
+		script := scripts.NewOAuthScript(persistence.NewUserRepo(db), []byte(cfg.JWTSecret))
 		resp, err := script.Exec(c, scripts.OAuthReq{
 			Username: username,
 			Email:    email,

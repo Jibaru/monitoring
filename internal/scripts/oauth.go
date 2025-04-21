@@ -5,10 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"monitoring/internal/persistence"
+	"monitoring/internal/domain"
 )
 
 type OAuthReq struct {
@@ -21,47 +20,52 @@ type OAuthResp struct {
 }
 
 type OAuthScript struct {
-	db        *mongo.Database
+	userRepo  domain.UserRepo
 	jwtSecret []byte
 }
 
 func NewOAuthScript(
-	db *mongo.Database,
+	userRepo domain.UserRepo,
 	jwtSecret []byte,
 ) *OAuthScript {
-	return &OAuthScript{db: db, jwtSecret: jwtSecret}
+	return &OAuthScript{userRepo: userRepo, jwtSecret: jwtSecret}
 }
 
 func (s *OAuthScript) Exec(ctx context.Context, req OAuthReq) (*OAuthResp, error) {
-	user, err := persistence.GetUserByEmail(ctx, s.db, req.Email)
+	user, err := s.userRepo.GetUserByEmail(ctx, req.Email)
 	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, err
 	}
 
 	if err != nil && errors.Is(err, mongo.ErrNoDocuments) {
 		// Register as root
-		validatedAt := time.Now().UTC()
-		u := persistence.User{
-			ID:           primitive.NewObjectID(),
-			Username:     req.Username,
-			Email:        req.Email,
-			Password:     "",
-			RegisteredAt: time.Now().UTC(),
-			ValidatedAt:  &validatedAt,
-			IsVisitor:    false,
-			FromOAuth:    true,
-			RootUserID:   nil,
-		}
-
-		err = persistence.SaveUser(ctx, s.db, u)
+		validatedAt := Now().UTC()
+		newUser, err := domain.NewUser(
+			domain.NewAutoID(),
+			req.Username,
+			req.Email,
+			"",
+			Now().UTC(),
+			"",
+			time.Time{},
+			&validatedAt,
+			false,
+			true,
+			nil,
+		)
 		if err != nil {
 			return nil, err
 		}
 
-		user = &u
+		err = s.userRepo.SaveUser(ctx, *newUser)
+		if err != nil {
+			return nil, err
+		}
+
+		user = newUser
 	}
 
-	tokenString, err := generateToken(user.ID, user.Email, s.jwtSecret)
+	tokenString, err := generateToken(user.ID(), user.Email(), s.jwtSecret)
 	if err != nil {
 		return nil, err
 	}

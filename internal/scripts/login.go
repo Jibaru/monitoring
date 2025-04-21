@@ -3,9 +3,7 @@ package scripts
 import (
 	"context"
 	"errors"
-	"monitoring/internal/persistence"
-
-	"go.mongodb.org/mongo-driver/mongo"
+	"monitoring/internal/domain"
 )
 
 type LoginReq struct {
@@ -25,32 +23,32 @@ type LoginResp struct {
 }
 
 type LoginScript struct {
-	db        *mongo.Database
+	userRepo  domain.UserRepo
 	jwtSecret []byte
 }
 
-func NewLoginScript(db *mongo.Database, jwtSecret string) *LoginScript {
+func NewLoginScript(userRepo domain.UserRepo, jwtSecret string) *LoginScript {
 	return &LoginScript{
-		db:        db,
+		userRepo:  userRepo,
 		jwtSecret: []byte(jwtSecret),
 	}
 }
 
 func (s *LoginScript) Exec(ctx context.Context, req LoginReq) (*LoginResp, error) {
-	user, err := persistence.GetUserByEmail(ctx, s.db, req.Email)
+	user, err := s.userRepo.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, err
 	}
 
-	if user.ValidatedAt == nil {
+	if user.ValidatedAt() == nil {
 		return nil, errors.New("user should be validated to login")
 	}
 
-	if !isValidPassword(user.Password, req.Password) {
+	if !isValidPassword(user.Password(), req.Password) {
 		return nil, errors.New("email or password are invalid")
 	}
 
-	tokenString, err := generateToken(user.ID, user.Email, s.jwtSecret)
+	tokenString, err := generateToken(user.ID(), user.Email(), s.jwtSecret)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +56,7 @@ func (s *LoginScript) Exec(ctx context.Context, req LoginReq) (*LoginResp, error
 	return userToLoginResp(tokenString, user), nil
 }
 
-func userToLoginResp(token string, user *persistence.User) *LoginResp {
+func userToLoginResp(token string, user *domain.User) *LoginResp {
 	return &LoginResp{
 		Token: token,
 		User: struct {
@@ -68,11 +66,11 @@ func userToLoginResp(token string, user *persistence.User) *LoginResp {
 			IsVisitor bool   `json:"isVisitor"`
 			FromOAuth bool   `json:"fromOAuth"`
 		}{
-			ID:        user.ID.Hex(),
-			Username:  user.Username,
-			Email:     user.Email,
-			IsVisitor: user.IsVisitor,
-			FromOAuth: user.FromOAuth,
+			ID:        user.ID().Hex(),
+			Username:  user.Username(),
+			Email:     user.Email(),
+			IsVisitor: user.IsVisitor(),
+			FromOAuth: user.FromOAuth(),
 		},
 	}
 }

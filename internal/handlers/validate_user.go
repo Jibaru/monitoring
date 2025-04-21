@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"monitoring/internal/persistence"
 	"monitoring/internal/scripts"
 )
 
@@ -28,7 +29,7 @@ func ValidateUser(db *mongo.Database) gin.HandlerFunc {
 
 		req.UserID = c.Param("userID")
 
-		resp, err := scripts.NewValidateUserScript(db).Exec(c, req)
+		resp, err := scripts.NewValidateUserScript(persistence.NewUserRepo(db)).Exec(c, req)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, ErrorResp{Message: err.Error()})
 			return

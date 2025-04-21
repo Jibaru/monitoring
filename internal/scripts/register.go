@@ -3,8 +3,7 @@ package scripts
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/mongo"
-
+	"monitoring/internal/domain"
 	"monitoring/internal/mail"
 )
 
@@ -20,21 +19,21 @@ type RegisterResp struct {
 }
 
 type RegisterScript struct {
-	db         *mongo.Database
+	userRepo   domain.UserRepo
 	mailSender *mail.MailSender
 	webBaseURI string
 }
 
 func NewRegisterScript(
-	db *mongo.Database,
+	userRepo domain.UserRepo,
 	mailSender *mail.MailSender,
 	webBaseURI string,
 ) *RegisterScript {
-	return &RegisterScript{db: db, mailSender: mailSender, webBaseURI: webBaseURI}
+	return &RegisterScript{userRepo: userRepo, mailSender: mailSender, webBaseURI: webBaseURI}
 }
 
 func (s *RegisterScript) Exec(ctx context.Context, req RegisterReq) (*RegisterResp, error) {
-	createUserScript := NewCreateUserScript(s.db, s.mailSender, s.webBaseURI)
+	createUserScript := NewCreateUserScript(s.userRepo, s.mailSender, s.webBaseURI)
 	resp, err := createUserScript.Exec(ctx, CreateUserReq{
 		Email:     req.Email,
 		Password:  req.Password,

@@ -3,10 +3,7 @@ package scripts
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-
-	"monitoring/internal/persistence"
+	"monitoring/internal/domain"
 )
 
 type UpdateUserReq struct {
@@ -19,32 +16,35 @@ type UpdateUserResp struct {
 }
 
 type UpdateUserScript struct {
-	db *mongo.Database
+	userRepo domain.UserRepo
 }
 
-func NewUpdateUserScript(db *mongo.Database) *UpdateUserScript {
-	return &UpdateUserScript{db: db}
+func NewUpdateUserScript(userRepo domain.UserRepo) *UpdateUserScript {
+	return &UpdateUserScript{userRepo: userRepo}
 }
 
 func (s *UpdateUserScript) Exec(ctx context.Context, req UpdateUserReq) (*UpdateUserResp, error) {
-	id, err := primitive.ObjectIDFromHex(req.ID)
+	id, err := domain.NewID(req.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := persistence.GetUserByID(ctx, s.db, id)
+	user, err := s.userRepo.GetUserByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	user.Username = req.Username
+	err = user.ChangeUsername(req.Username)
+	if err != nil {
+		return nil, err
+	}
 
-	err = persistence.UpdateUser(ctx, s.db, *user)
+	err = s.userRepo.UpdateUser(ctx, *user)
 	if err != nil {
 		return nil, err
 	}
 
 	return &UpdateUserResp{
-		Username: user.Username,
+		Username: user.Username(),
 	}, nil
 }

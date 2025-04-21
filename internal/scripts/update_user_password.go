@@ -4,10 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-
-	"monitoring/internal/persistence"
+	"monitoring/internal/domain"
 )
 
 type UpdateUserPasswordReq struct {
@@ -17,25 +14,25 @@ type UpdateUserPasswordReq struct {
 }
 
 type UpdateUserPasswordScript struct {
-	db *mongo.Database
+	userRepo domain.UserRepo
 }
 
-func NewUpdateUserPasswordScript(db *mongo.Database) *UpdateUserPasswordScript {
-	return &UpdateUserPasswordScript{db: db}
+func NewUpdateUserPasswordScript(userRepo domain.UserRepo) *UpdateUserPasswordScript {
+	return &UpdateUserPasswordScript{userRepo: userRepo}
 }
 
 func (s *UpdateUserPasswordScript) Exec(ctx context.Context, req UpdateUserPasswordReq) error {
-	id, err := primitive.ObjectIDFromHex(req.ID)
+	id, err := domain.NewID(req.ID)
 	if err != nil {
 		return err
 	}
 
-	user, err := persistence.GetUserByID(ctx, s.db, id)
+	user, err := s.userRepo.GetUserByID(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	if user.Password != "" && !isValidPassword(user.Password, req.OldPassword) {
+	if user.Password() != "" && !isValidPassword(user.Password(), req.OldPassword) {
 		return errors.New("old password is invalid")
 	}
 
@@ -44,9 +41,12 @@ func (s *UpdateUserPasswordScript) Exec(ctx context.Context, req UpdateUserPassw
 		return err
 	}
 
-	user.Password = encryptedPassword
+	err = user.ChangePassword(encryptedPassword)
+	if err != nil {
+		return err
+	}
 
-	err = persistence.UpdateUser(ctx, s.db, *user)
+	err = s.userRepo.UpdateUser(ctx, *user)
 	if err != nil {
 		return err
 	}

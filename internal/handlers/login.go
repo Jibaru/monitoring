@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"monitoring/internal/persistence"
 	"monitoring/internal/scripts"
 )
 
@@ -26,7 +27,7 @@ func Login(db *mongo.Database, jwtSecret string) gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, ErrorResp{Message: err.Error()})
 			return
 		}
-		resp, err := scripts.NewLoginScript(db, jwtSecret).Exec(c, req)
+		resp, err := scripts.NewLoginScript(persistence.NewUserRepo(db), jwtSecret).Exec(c, req)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, ErrorResp{Message: err.Error()})
 			return

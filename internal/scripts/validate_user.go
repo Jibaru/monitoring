@@ -5,10 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-
-	"monitoring/internal/persistence"
+	"monitoring/internal/domain"
 )
 
 var (
@@ -26,38 +23,41 @@ type ValidateUserResp struct {
 }
 
 type ValidateUserScript struct {
-	db *mongo.Database
+	userRepo domain.UserRepo
 }
 
 func NewValidateUserScript(
-	db *mongo.Database,
+	userRepo domain.UserRepo,
 ) *ValidateUserScript {
-	return &ValidateUserScript{db: db}
+	return &ValidateUserScript{userRepo: userRepo}
 }
 
 func (s *ValidateUserScript) Exec(ctx context.Context, req ValidateUserReq) (*ValidateUserResp, error) {
-	userID, err := primitive.ObjectIDFromHex(req.UserID)
+	userID, err := domain.NewID(req.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := persistence.GetUserByID(ctx, s.db, userID)
+	user, err := s.userRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	if user.PinExpiresAt.Before(time.Now().UTC()) {
+	if user.PinExpiresAt().Before(Now().UTC()) {
 		return nil, ErrValidateUserScriptValidationExpired
 	}
 
-	if user.Pin != req.Pin {
+	if user.Pin() != req.Pin {
 		return nil, ErrValidateUserScriptInvalidPin
 	}
 
-	validatedAt := time.Now().UTC()
-	user.ValidatedAt = &validatedAt
+	validatedAt := Now().UTC()
+	err = user.ChangeValidatedAt(&validatedAt)
+	if err != nil {
+		return nil, err
+	}
 
-	err = persistence.UpdateUser(ctx, s.db, *user)
+	err = s.userRepo.UpdateUser(ctx, *user)
 	if err != nil {
 		return nil, err
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"monitoring/internal/persistence"
 	"monitoring/internal/scripts"
 )
 
@@ -29,7 +30,7 @@ func UpdateUser(db *mongo.Database) gin.HandlerFunc {
 
 		req.ID = c.GetString("user_id")
 
-		script := scripts.NewUpdateUserScript(db)
+		script := scripts.NewUpdateUserScript(persistence.NewUserRepo(db))
 		resp, err := script.Exec(c, req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, ErrorResp{Message: err.Error()})
