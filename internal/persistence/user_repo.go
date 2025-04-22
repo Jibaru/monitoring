@@ -140,3 +140,9 @@ func (r *userRepo) ListUsers(ctx context.Context, criteria domain.Criteria) ([]d
 
 	return users, nil
 }
+
+func (r *userRepo) DeleteUser(ctx context.Context, id domain.ID) error {
+	collection := r.db.Collection(r.collection)
+	_, err := collection.DeleteOne(ctx, map[string]any{"_id": id})
+	return err
+}

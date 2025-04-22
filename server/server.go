@@ -66,6 +66,7 @@ func New(cfg config.Config, db *mongo.Database) *gin.Engine {
 			backoffice.PUT("/users/me/password", handlers.UpdateUserPassword(db))
 			backoffice.POST("/users", handlers.CreateNoRootUser(db, cfg))
 			backoffice.GET("/users", handlers.ListNoRootUsers(db))
+			backoffice.DELETE("/users/:userID", handlers.DeleteUser(db))
 		}
 	}
 

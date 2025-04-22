@@ -9,4 +9,5 @@ type UserRepo interface {
 	GetUserByID(ctx context.Context, id ID) (*User, error)
 	UpdateUser(ctx context.Context, user User) error
 	ListUsers(ctx context.Context, criteria Criteria) ([]User, error)
+	DeleteUser(ctx context.Context, id ID) error
 }
