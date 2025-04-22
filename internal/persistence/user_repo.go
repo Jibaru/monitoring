@@ -114,3 +114,29 @@ func (r *userRepo) UpdateUser(ctx context.Context, user domain.User) error {
 	})
 	return err
 }
+
+func (r *userRepo) ListUsers(ctx context.Context, criteria domain.Criteria) ([]domain.User, error) {
+	collection := r.db.Collection(r.collection)
+	cursor, err := collection.Aggregate(ctx, criteriaToPipeline(criteria))
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	users := make([]domain.User, 0)
+	for cursor.Next(ctx) {
+		var user UserDoc
+		if err := cursor.Decode(&user); err != nil {
+			return nil, err
+		}
+
+		domainUser, err := userToDomain(&user)
+		if err != nil {
+			return nil, err
+		}
+
+		users = append(users, *domainUser)
+	}
+
+	return users, nil
+}

@@ -8,4 +8,5 @@ type UserRepo interface {
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	GetUserByID(ctx context.Context, id ID) (*User, error)
 	UpdateUser(ctx context.Context, user User) error
+	ListUsers(ctx context.Context, criteria Criteria) ([]User, error)
 }
