@@ -29,10 +29,7 @@ func CreateNoRootUser(db *mongo.Database, cfg config.Config) gin.HandlerFunc {
 			return
 		}
 
-		if req.RootID == "" {
-			c.JSON(http.StatusBadRequest, ErrorResp{Message: "rootId should not be empty"})
-			return
-		}
+		req.RootID = c.GetString("user_id")
 
 		mailSender := mail.NewMailSender(cfg.MailFromEmail, cfg.MailAppPassword)
 		resp, err := scripts.NewCreateUserScript(persistence.NewUserRepo(db), mailSender, cfg.WebBaseURI).Exec(c, req)
